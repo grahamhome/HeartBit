@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">HeartBit</string>
+    <string name="ble_not_supported">Sorry, Bluetooth Low Energy is not supported on this device.</string>
+</resources>
