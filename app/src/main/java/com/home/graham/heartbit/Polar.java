@@ -1,8 +1,6 @@
 package com.home.graham.heartbit;
 // HR example code
 
-import android.app.IntentService;
-import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -10,22 +8,12 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
-import android.content.Intent;
-import android.databinding.ObservableArrayList;
-import android.os.AsyncTask;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.support.annotation.Nullable;
-import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -82,6 +70,7 @@ public class Polar extends Thread {
     };
 
     public static final int NEW_MEASUREMENT = 0;
+    public static final int COULD_NOT_CONNECT = 1;
 
     public static AD_TYPE getCode(byte type){
         try {
@@ -141,7 +130,7 @@ public class Polar extends Thread {
         }
     };
 
-    private  BluetoothAdapter.LeScanCallback leScanCallback = new BluetoothAdapter.LeScanCallback() {
+    private BluetoothAdapter.LeScanCallback leScanCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
             processDeviceDiscovered(device,rssi,scanRecord);
@@ -272,7 +261,7 @@ public class Polar extends Thread {
     private boolean mScanning;
     private Handler mHandler = new Handler();
 
-    // Stops scanning after 10 seconds.
+    // Stops scanning if Polar is not found after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
 
     public void scanLeDevice(final boolean enable) {
@@ -283,6 +272,8 @@ public class Polar extends Thread {
                 public void run() {
                     mScanning = false;
                     bluetoothAdapter.stopLeScan(leScanCallback);
+                    //BreathingCoach.uiMessageHandler.obtainMessage(COULD_NOT_CONNECT, new PolarTask(0)).sendToTarget();
+
                 }
             }, SCAN_PERIOD);
 
