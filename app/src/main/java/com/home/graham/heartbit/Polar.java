@@ -21,6 +21,10 @@ import java.util.UUID;
 public class Polar extends Thread {
 
     private static final String ID = "3161D22C";
+    private static boolean connected = false;
+
+    // Factor to convert RR values to milliseconds
+    private static final float RR_CONVERSION_FACTOR = 1024/1000;
 
     public Polar(BluetoothAdapter adapter, Context context) {
         this.context = context;
@@ -69,8 +73,11 @@ public class Polar extends Thread {
 
     };
 
+    // Status codes
     public static final int NEW_MEASUREMENT = 0;
     public static final int COULD_NOT_CONNECT = 1;
+    public static final int CONNECTED = 2;
+    public static final int TIMEOUT = 3;
 
     public static AD_TYPE getCode(byte type){
         try {
@@ -146,7 +153,9 @@ public class Polar extends Thread {
                 if (names.length > 2) {
                     String deviceId = names[names.length-1];
                     if( deviceId.equals(ID) ){
+                        connected = true;
                         scanLeDevice(false);
+                        BreathingCoach.uiMessageHandler.obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
                         } else {
@@ -170,11 +179,9 @@ public class Polar extends Thread {
             if (newState == BluetoothGatt.STATE_CONNECTED && status == BluetoothGatt.GATT_SUCCESS) {
                 gatt.discoverServices();
             } else if(newState == BluetoothGatt.STATE_DISCONNECTED){
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
-                } else {
-                    bluetoothAdapter.startLeScan(leScanCallback);
-                }
+                connected = false;
+                BreathingCoach.uiMessageHandler.obtainMessage(TIMEOUT).sendToTarget();
+                scanLeDevice(true);
             }
         }
 
@@ -236,7 +243,7 @@ public class Polar extends Thread {
                     while (offset < len) {
                         int rrValue = (int) ((data[offset] & 0xFF) + ((data[offset + 1] & 0xFF) << 8));
                         offset += 2;
-                        BreathingCoach.uiMessageHandler.obtainMessage(NEW_MEASUREMENT, new PolarTask(rrValue)).sendToTarget();
+                        RRReceiver.rrHandler.obtainMessage(NEW_MEASUREMENT, new PolarTask(rrValue*RR_CONVERSION_FACTOR)).sendToTarget();
                     }
                 }
             }
@@ -270,10 +277,11 @@ public class Polar extends Thread {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    mScanning = false;
-                    bluetoothAdapter.stopLeScan(leScanCallback);
-                    //BreathingCoach.uiMessageHandler.obtainMessage(COULD_NOT_CONNECT, new PolarTask(0)).sendToTarget();
-
+                    if (!connected) {
+                        mScanning = false;
+                        bluetoothAdapter.stopLeScan(leScanCallback);
+                        BreathingCoach.uiMessageHandler.obtainMessage(COULD_NOT_CONNECT).sendToTarget();
+                    }
                 }
             }, SCAN_PERIOD);
 
@@ -286,9 +294,9 @@ public class Polar extends Thread {
     }
 
     public class PolarTask {
-        public int rr;
+        public float rr;
 
-        public PolarTask(int rr) {
+        public PolarTask(float rr) {
             this.rr = rr;
         }
     }

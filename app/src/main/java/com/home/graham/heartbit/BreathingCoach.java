@@ -8,13 +8,17 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,34 +28,43 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
 
     private final static int REQUEST_ENABLE_BT = 1;
     private final static int PERMISSION_REQUEST_COARSE_LOCATION = 1;
+    private final static int PERMISSION_REQUEST_WRITE_EXTERNAL = 2;
 
-    private static TextView rrDisplay;
+    public final static int TOGGLE_RECORDING = 5;
+
+    private static TextView connectionDisplay;
     private static TextView bpmDisplay;
+    private static TextView rrDisplay;
+    private static Button toggleButton;
 
     public static BluetoothAdapter bluetoothAdapter;
     private static BluetoothManager bluetoothManager;
-
     private static Polar polarService;
-
+    private static RRReceiver recieverService = new RRReceiver();
     public static Handler uiMessageHandler;
-    private static ArrayList<Integer> rrValues = new ArrayList<>();
-    private static int[] recentValues = new int[5];
-    private static int rvIndex = 0;
-
     private static Context context;
 
-    // Indicates whether or not we are considering the most recently received value as a possible error.
-    private static boolean possibleError = false;
+    private ArrayList<Float> rrValues = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_breathing_coach);
-        rrDisplay = findViewById(R.id.rrDisplay);
+        (connectionDisplay = findViewById(R.id.statusDisplay)).setText("Connecting");
         bpmDisplay = findViewById(R.id.bpmDisplay);
-        bpmDisplay.setText("Waiting...");
+        rrDisplay = findViewById(R.id.rrDisplay);
         context = this;
         setUpMessageHandler();
+        (toggleButton = findViewById(R.id.toggle)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
+            }
+        });
+
+        if (this.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_WRITE_EXTERNAL);
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -68,50 +81,55 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
         uiMessageHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message inputMessage) {
-                Polar.PolarTask polarTask = (Polar.PolarTask)inputMessage.obj;
                 switch (inputMessage.what) {
                     case Polar.NEW_MEASUREMENT:
-                        // Check to see if the current beat is a possible error
-                        if (rrValues.size() > 0 && Math.abs(polarTask.rr - rrValues.get(rrValues.size() - 1)) > 0.25 * rrValues.get(rrValues.size() - 1)) {
-
-                            if (possibleError) {
-                                if (Math.abs(polarTask.rr - rrValues.get(rrValues.size() - 2)) <= 0.25 * rrValues.get(rrValues.size() - 2)){
-                                    // The error value was a one-off event, and should be removed
-                                    rrValues.remove(rrValues.size() - 1);
-                                    rrDisplay.setText("Most recent value removed" + System.lineSeparator() + rrDisplay.getText());
-                                    possibleError = false;
-                                } else {
-                                    // We have seen a second value that is an aberrant increase or decrease, so the values
-                                    // are simply rising or falling faster than we expect.
-                                    possibleError = false;
-                                }
-                            } else {
-                                possibleError = true;
-                            }
-                        }
-                        // Add the beat to the list and recalculate the bpm
-                        rrValues.add(polarTask.rr);
-                        rrDisplay.setText(String.valueOf(polarTask.rr) + System.lineSeparator() + rrDisplay.getText());
-                        if (rrValues.size() > 5) {
-                            float tot = 0;
-                            for (int i : rrValues.subList(rrValues.size()-6, rrValues.size()-1)) {
-                                tot += i;
-                            }
-                            bpmDisplay.setText(String.valueOf(Math.round(61440.0 / (tot / 5))));
-                        }
+                        connectionDisplay.setText("Connected");
+                        connectionDisplay.setTextColor(Color.GREEN);
+                    case Polar.CONNECTED:
+                        connectionDisplay.setText("Connected");
+                        connectionDisplay.setTextColor(Color.GREEN);
                         break;
                     case Polar.COULD_NOT_CONNECT:
-                        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
                         builder.setTitle("Unable To Connect"); // TODO: make these strings into variables
                         builder.setMessage("The Polar HR monitor could not be found. Please ensure it is attached to the chest strap and is being worn correctly before continuing.");
                         builder.setPositiveButton(android.R.string.ok, null);
                         builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
                             @Override
                             public void onDismiss(DialogInterface dialog) {
-                                polarService.start();
+                                connectionDisplay.setText("Connecting");
+                                connectionDisplay.setTextColor(Color.BLACK);
+                                (polarService = new Polar(bluetoothAdapter, getApplicationContext())).start();
                             }
                         });
                         builder.show();
+                        connectionDisplay.setText("Disconnected");
+                        connectionDisplay.setTextColor(Color.RED);
+                        break;
+                    case Polar.TIMEOUT:
+                        Toast.makeText(getApplicationContext(), "Make sure Polar is secure", Toast.LENGTH_SHORT).show();
+                        connectionDisplay.setText("Waiting for data");
+                        connectionDisplay.setTextColor(Color.BLACK);
+                        break;
+                    case RRReceiver.NEW_VALUE:
+                        rrValues.add((float)inputMessage.obj);
+                        rrDisplay.setText(inputMessage.obj.toString() + System.lineSeparator() + rrDisplay.getText());
+                        if (rrValues.size() > 5) {
+                            float tot = 0;
+                            for (float f : rrValues.subList(rrValues.size() - 6, rrValues.size() - 1)) {
+                                tot += f;
+                            }
+                            bpmDisplay.setText(String.valueOf(60000/Math.round((tot / 5))));
+                        }
+                        break;
+                    case RRReceiver.RECORDING_STARTED:
+                        toggleButton.setText("Stop");
+                        break;
+                    case RRReceiver.RECORDING_STOPPED:
+                        toggleButton.setText("Start");
+                        break;
+                    case RRReceiver.USER_MESSAGE:
+                        Toast.makeText(getApplicationContext(), inputMessage.obj.toString(), Toast.LENGTH_SHORT).show();
                         break;
                     default:
                         super.handleMessage(inputMessage);
@@ -131,6 +149,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             Intent enableBluetoothIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BT);
         }
+        recieverService.start();
         polarService = new Polar(bluetoothAdapter, getApplicationContext());
         polarService.start();
     }
@@ -138,7 +157,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int grantResults[]) {
         switch (requestCode) {
-            case PERMISSION_REQUEST_COARSE_LOCATION: {
+            case PERMISSION_REQUEST_COARSE_LOCATION:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     connect();
                 } else {
@@ -154,8 +173,16 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                     });
                     builder.show();
                 }
-                return;
-            }
+                break;
+            case PERMISSION_REQUEST_WRITE_EXTERNAL:
+                if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Unable To Save"); // TODO: make these strings into variables
+                    builder.setMessage("Since write permission has not been granted, this app will not be able to export the RR data it collects.");
+                    builder.setPositiveButton(android.R.string.ok, null);
+                    builder.show();
+                }
+                break;
         }
     }
 }
