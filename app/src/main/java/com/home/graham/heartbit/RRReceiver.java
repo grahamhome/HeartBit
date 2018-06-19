@@ -5,8 +5,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -20,7 +24,7 @@ public class RRReceiver extends Thread {
     public static Handler rrHandler;
 
     private static final int DETECTION_WINDOW_SIZE = 20;
-    private static final int CORRECTION_WINDOW_SIZE = 2;
+    private static final int CORRECTION_WINDOW_SIZE = 10;
 
     public static final int NEW_VALUE = 4;
     public static final int RECORDING_STARTED = 6;
@@ -33,6 +37,8 @@ public class RRReceiver extends Thread {
     private static boolean recording = false;
 
     private static Timer timer = new Timer();
+
+    private static final boolean TESTING = true;
 
     @Override
     public void run() {
@@ -70,15 +76,41 @@ public class RRReceiver extends Thread {
                         } else {
                             BreathingCoach.uiMessageHandler.obtainMessage(RECORDING_STOPPED).sendToTarget();
                             if (checkWriteCapability()) {
-                                writeData(false);
-                                cleanData();
-                                writeData(true);
+                                if (!TESTING) {
+                                    writeData(false);
+                                    cleanData();
+                                    writeData(true);
+                                } else {
+                                    importData();
+                                    cleanData();
+                                    writeData(true);
+                                }
                             }
                         }
                         break;
                 }
             }
         };
+    }
+
+    // TODO: remove
+    private static void importData() {
+        timeSequentialRRValues.clear();
+        File root = android.os.Environment.getExternalStorageDirectory();
+        File directory = new File(root.getAbsolutePath() + "/heartbit");
+        File input = new File(directory, "5-18-2018-19-1-raw.txt");
+        try {
+            FileReader inputReader = new FileReader(input);
+            BufferedReader bufferedReader = new BufferedReader(inputReader);
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                timeSequentialRRValues.add(Float.parseFloat(line));
+            }
+            bufferedReader.close();
+            inputReader.close();
+        } catch (IOException x) {
+            BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Error: failed to read from external storage").sendToTarget();
+        }
     }
 
     private static boolean checkWriteCapability() {
@@ -130,41 +162,49 @@ public class RRReceiver extends Thread {
             float rr = cleanedRRValues.get(i);
             boolean clean = false;
             // All values must be in the range of a normal heart rate.
-            boolean normal = rr >= 500 && rr <= 2000;
-            if (normal) {
-                List<Float> window;
-                if (i < DETECTION_WINDOW_SIZE/2) {
-                    window = new ArrayList<>(cleanedRRValues.subList(0, DETECTION_WINDOW_SIZE+1));
-                    window.remove(rr);
-                } else if (i+(DETECTION_WINDOW_SIZE/2)+1 > size) {
-                    window = new ArrayList<>(cleanedRRValues.subList(size-DETECTION_WINDOW_SIZE-1, size));
-                    window.remove(rr);
-                } else {
-                    window = new ArrayList<>(cleanedRRValues.subList(i-(DETECTION_WINDOW_SIZE/2), i+(DETECTION_WINDOW_SIZE/2)+1));
-                    window.remove(rr);
-                }
-                if (rr <= median(window) + 450) { // TODO: Adjust threshold based on BPM?
-                    cleanedRRValues.remove(i);
-                    cleanedRRValues.add(i,rr);
-                    clean = true;
-                }
-            }
-            if (!clean) {
-                List<Float> window = new ArrayList<>();
-                if (i < CORRECTION_WINDOW_SIZE/2) {
-                    window = new ArrayList<>(cleanedRRValues.subList(0, CORRECTION_WINDOW_SIZE));
-                    window.remove(rr);
-                } else if (i+(CORRECTION_WINDOW_SIZE/2)+1 > size) {
-                    window = new ArrayList<>(cleanedRRValues.subList(size-CORRECTION_WINDOW_SIZE, size));
-                    window.remove(rr);
-                } else {
-                    window = new ArrayList<>(cleanedRRValues.subList(i-(CORRECTION_WINDOW_SIZE/2), i+(CORRECTION_WINDOW_SIZE/2)+1));
-                    window.remove(rr);
+            boolean normal = rr >= 100 && rr <= 2000;
+            if (!normal || !isValid(i)) {
+                ArrayList<Float> window = new ArrayList<>();
+                boolean searching = true;
+                int offset = 1;
+                while (window.size() < CORRECTION_WINDOW_SIZE && searching) {
+                    if (i-offset < 0 && i+offset > cleanedRRValues.size()-1) {
+                        searching = false;
+                        break;
+                    }
+                    if (i-offset > 0 && isValid(i-offset)) {
+                        window.add(cleanedRRValues.get(i-offset));
+                    }
+                    if (i+offset < cleanedRRValues.size()-1 && isValid(i+offset)) {
+                        window.add(cleanedRRValues.get(i+offset));
+                    }
+                    offset++;
                 }
                 cleanedRRValues.remove(i);
-                cleanedRRValues.add(1, mean(window));
+                if (i < cleanedRRValues.size()-2) {
+                    cleanedRRValues.add(i, mean(window));
+                } else {
+                    cleanedRRValues.add(mean(window));
+                }
             }
         }
+    }
+
+    private static boolean isValid(int index) {
+        int size = cleanedRRValues.size();
+        float rr = cleanedRRValues.get(index);
+        List<Float> window;
+        if (index < DETECTION_WINDOW_SIZE/2) {
+            window = new ArrayList<>(cleanedRRValues.subList(0, DETECTION_WINDOW_SIZE+1));
+            window.remove(rr);
+        } else if (index+(DETECTION_WINDOW_SIZE/2)+1 > size) {
+            window = new ArrayList<>(cleanedRRValues.subList(size-DETECTION_WINDOW_SIZE-1, size));
+            window.remove(rr);
+        } else {
+            window = new ArrayList<>(cleanedRRValues.subList(index-(DETECTION_WINDOW_SIZE/2), index+(DETECTION_WINDOW_SIZE/2)+1));
+            window.remove(rr);
+        }
+        return rr <= (median(window) + 250); // TODO: Adjust threshold based on BPM?
     }
 
     private static float median(List<Float> data) {

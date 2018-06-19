@@ -153,18 +153,20 @@ public class Polar extends Thread {
                 if (names.length > 2) {
                     String deviceId = names[names.length-1];
                     if( deviceId.equals(ID) ){
-                        connected = true;
-                        scanLeDevice(false);
-                        BreathingCoach.uiMessageHandler.obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
-                        } else {
-                            bluetoothAdapter.stopLeScan(leScanCallback);
-                        }
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            device.connectGatt(context,false,bluetoothGattCallback, BluetoothDevice.TRANSPORT_LE);
-                        } else {
-                            device.connectGatt(context,false,bluetoothGattCallback);
+                        if (!connected) {
+                            connected = true;
+                            scanLeDevice(false);
+                            BreathingCoach.uiMessageHandler.obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
+                            } else {
+                                bluetoothAdapter.stopLeScan(leScanCallback);
+                            }
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                device.connectGatt(context, false, bluetoothGattCallback, BluetoothDevice.TRANSPORT_LE);
+                            } else {
+                                device.connectGatt(context, false, bluetoothGattCallback);
+                            }
                         }
                     }
                 }
