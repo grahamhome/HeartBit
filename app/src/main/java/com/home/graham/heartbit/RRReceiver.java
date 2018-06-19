@@ -23,7 +23,7 @@ public class RRReceiver extends Thread {
 
     public static Handler rrHandler;
 
-    private static final int DETECTION_WINDOW_SIZE = 20;
+    private static final int DETECTION_WINDOW_SIZE = 45;
     private static final int CORRECTION_WINDOW_SIZE = 10;
 
     public static final int NEW_VALUE = 4;
@@ -32,6 +32,7 @@ public class RRReceiver extends Thread {
     public static final int USER_MESSAGE = 8;
 
     private static ArrayList<Float> timeSequentialRRValues = new ArrayList<>();
+    private static ArrayList<Float> dRRValues = new ArrayList<>();
     private static ArrayList<Float> cleanedRRValues;
 
     private static boolean recording = false;
@@ -62,7 +63,11 @@ public class RRReceiver extends Thread {
                             timer.purge();
                             (timer = new Timer()).schedule(new DisconnectorDetector(), 10000);
                             BreathingCoach.uiMessageHandler.obtainMessage(Polar.NEW_MEASUREMENT).sendToTarget();
-                            timeSequentialRRValues.add(((Polar.PolarTask) inputMessage.obj).rr);
+                            float rr = ((Polar.PolarTask) inputMessage.obj).rr;
+                            if (!timeSequentialRRValues.isEmpty()) {
+                                dRRValues.add(Math.abs(timeSequentialRRValues.get(timeSequentialRRValues.size()-1)-rr));
+                            }
+                            timeSequentialRRValues.add(rr);
                         }
                         break;
                     case BreathingCoach.TOGGLE_RECORDING:
@@ -71,6 +76,7 @@ public class RRReceiver extends Thread {
                         timer.purge();
                         if (recording) {
                             timeSequentialRRValues.clear();
+                            dRRValues.clear();
                             (timer = new Timer()).schedule(new DisconnectorDetector(), 10000);
                             BreathingCoach.uiMessageHandler.obtainMessage(RECORDING_STARTED).sendToTarget();
                         } else {
@@ -96,14 +102,18 @@ public class RRReceiver extends Thread {
     // TODO: remove
     private static void importData() {
         timeSequentialRRValues.clear();
+        dRRValues.clear();
         File root = android.os.Environment.getExternalStorageDirectory();
         File directory = new File(root.getAbsolutePath() + "/heartbit");
-        File input = new File(directory, "5-18-2018-19-1-raw.txt");
+        File input = new File(directory, "5-18-2018-20-56-raw.txt");
         try {
             FileReader inputReader = new FileReader(input);
             BufferedReader bufferedReader = new BufferedReader(inputReader);
             String line;
             while ((line = bufferedReader.readLine()) != null) {
+                if (!timeSequentialRRValues.isEmpty()) {
+                    dRRValues.add(Math.abs(timeSequentialRRValues.get(timeSequentialRRValues.size()-1)-Float.parseFloat(line)));
+                }
                 timeSequentialRRValues.add(Float.parseFloat(line));
             }
             bufferedReader.close();
@@ -152,18 +162,17 @@ public class RRReceiver extends Thread {
     }
 
     private static void cleanData() {
-        int size = timeSequentialRRValues.size();
+        int size = dRRValues.size();
         cleanedRRValues = new ArrayList<>(timeSequentialRRValues);
         if (size < DETECTION_WINDOW_SIZE+1 || size < CORRECTION_WINDOW_SIZE+1) {
             BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Data is too small to process for correction").sendToTarget();
             return;
         }
         for (int i=0; i<size; i++) {
-            float rr = cleanedRRValues.get(i);
+            float drr = dRRValues.get(i);
             boolean clean = false;
             // All values must be in the range of a normal heart rate.
-            boolean normal = rr >= 100 && rr <= 2000;
-            if (!normal || !isValid(i)) {
+            if (!isValid(i)) {
                 ArrayList<Float> window = new ArrayList<>();
                 boolean searching = true;
                 int offset = 1;
@@ -191,23 +200,23 @@ public class RRReceiver extends Thread {
     }
 
     private static boolean isValid(int index) {
-        int size = cleanedRRValues.size();
-        float rr = cleanedRRValues.get(index);
+        int size = dRRValues.size();
+        float drr = dRRValues.get(index);
         List<Float> window;
         if (index < DETECTION_WINDOW_SIZE/2) {
-            window = new ArrayList<>(cleanedRRValues.subList(0, DETECTION_WINDOW_SIZE+1));
-            window.remove(rr);
+            window = new ArrayList<>(dRRValues.subList(0, DETECTION_WINDOW_SIZE+1));
+            window.remove(drr);
         } else if (index+(DETECTION_WINDOW_SIZE/2)+1 > size) {
-            window = new ArrayList<>(cleanedRRValues.subList(size-DETECTION_WINDOW_SIZE-1, size));
-            window.remove(rr);
+            window = new ArrayList<>(dRRValues.subList(size-DETECTION_WINDOW_SIZE-1, size));
+            window.remove(drr);
         } else {
-            window = new ArrayList<>(cleanedRRValues.subList(index-(DETECTION_WINDOW_SIZE/2), index+(DETECTION_WINDOW_SIZE/2)+1));
-            window.remove(rr);
+            window = new ArrayList<>(dRRValues.subList(index-(DETECTION_WINDOW_SIZE/2), index+(DETECTION_WINDOW_SIZE/2)+1));
+            window.remove(drr);
         }
-        return rr <= (median(window) + 250); // TODO: Adjust threshold based on BPM?
+        return drr <= (quartileDeviation(window) * 5.2);
     }
 
-    private static float median(List<Float> data) {
+    private static float quartileDeviation(List<Float> data) {
         int size = data.size();
         if (size == 0) {
             return 0;
@@ -228,11 +237,9 @@ public class RRReceiver extends Thread {
                 }
             }
         }
-        if (size % 2 == 0) {
-            return (orderedData.get((size/2)-1) + orderedData.get((size/2)+1))/2;
-        } else {
-            return orderedData.get((size-1)/2);
-        }
+        size = size - (size%4);
+        return (((orderedData.get((size/4)-1) + orderedData.get((size/4)+1))/2) +
+                ((orderedData.get(((size*3)/4)-1) + orderedData.get(((size*3)/4)+1))/2))/2;
     }
 
     private static float mean(List<Float> data) {
