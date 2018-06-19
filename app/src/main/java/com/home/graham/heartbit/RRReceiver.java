@@ -26,6 +26,8 @@ public class RRReceiver extends Thread {
     private static final int DETECTION_WINDOW_SIZE = 20;
     private static final int CORRECTION_WINDOW_SIZE = 2;
 
+    private static final int DRR_DETECTION_WINDOW_SIZE = 44;
+
     public static final int NEW_VALUE = 4;
     public static final int RECORDING_STARTED = 6;
     public static final int RECORDING_STOPPED = 7;
@@ -33,6 +35,7 @@ public class RRReceiver extends Thread {
 
     private static ArrayList<Float> timeSequentialRRValues = new ArrayList<>();
     private static ArrayList<Float> cleanedRRValues;
+    private static ArrayList<Float> dRRValues = new ArrayList<>();
 
     private static boolean recording = false;
 
@@ -71,6 +74,7 @@ public class RRReceiver extends Thread {
                         timer.purge();
                         if (recording) {
                             timeSequentialRRValues.clear();
+                            dRRValues.clear();
                             (timer = new Timer()).schedule(new DisconnectorDetector(), 10000);
                             BreathingCoach.uiMessageHandler.obtainMessage(RECORDING_STARTED).sendToTarget();
                         } else {
@@ -154,10 +158,11 @@ public class RRReceiver extends Thread {
     private static void cleanData() {
         int size = timeSequentialRRValues.size();
         cleanedRRValues = new ArrayList<>(timeSequentialRRValues);
-        if (size < DETECTION_WINDOW_SIZE+1 || size < CORRECTION_WINDOW_SIZE+1) {
+        if (size < DETECTION_WINDOW_SIZE+1 || size < CORRECTION_WINDOW_SIZE+1 || size < DRR_DETECTION_WINDOW_SIZE) {
             BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Data is too small to process for correction").sendToTarget();
             return;
         }
+        // Phase 1
         for (int i=0; i<size; i++) {
             float rr = cleanedRRValues.get(i);
             boolean clean = false;
@@ -188,7 +193,35 @@ public class RRReceiver extends Thread {
                 }
             }
         }
+        // Phase 2
+        for (int i=1; i<size; i++) {
+            dRRValues.add(Math.abs(cleanedRRValues.get(i)-cleanedRRValues.get(i-1)));
+        }
+        for (int i=1; i<dRRValues.size()-1; i++) {
+            if (!isValidDRR(i) && !isValidDRR(i-1)) {
+                // TODO: clean. Need to recalculate DRR value?
+            }
+        }
     }
+
+    private static boolean isValidDRR(int index) {
+        List<Float> window;
+        if (index - (DRR_DETECTION_WINDOW_SIZE/2) < 0) {
+            window = new ArrayList<>(dRRValues.subList(0, DRR_DETECTION_WINDOW_SIZE));
+            window.remove(dRRValues.get(index));
+        } else if (index + (DRR_DETECTION_WINDOW_SIZE/4) + 1 > dRRValues.size()) {
+            window = new ArrayList<>(dRRValues.subList(dRRValues.size()-DRR_DETECTION_WINDOW_SIZE-1, dRRValues.size()));
+            window.remove(dRRValues.get(index));
+        } else {
+            window = new ArrayList<>(dRRValues.subList(index-(DRR_DETECTION_WINDOW_SIZE/2), index+(DRR_DETECTION_WINDOW_SIZE/2)));
+            window.remove(dRRValues.get(index));
+        }
+        return (dRRValues.get(index) >= quartile(window) * 5.2) {
+
+        }
+    }
+
+
 
     private static boolean isValid(int index) {
         int size = cleanedRRValues.size();
