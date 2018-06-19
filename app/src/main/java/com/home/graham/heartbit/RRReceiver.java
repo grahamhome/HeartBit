@@ -24,7 +24,7 @@ public class RRReceiver extends Thread {
     public static Handler rrHandler;
 
     private static final int DETECTION_WINDOW_SIZE = 20;
-    private static final int CORRECTION_WINDOW_SIZE = 10;
+    private static final int CORRECTION_WINDOW_SIZE = 2;
 
     public static final int NEW_VALUE = 4;
     public static final int RECORDING_STARTED = 6;
@@ -98,7 +98,7 @@ public class RRReceiver extends Thread {
         timeSequentialRRValues.clear();
         File root = android.os.Environment.getExternalStorageDirectory();
         File directory = new File(root.getAbsolutePath() + "/heartbit");
-        File input = new File(directory, "5-18-2018-19-1-raw.txt");
+        File input = new File(directory, "5-18-2018-20-56-raw.txt");
         try {
             FileReader inputReader = new FileReader(input);
             BufferedReader bufferedReader = new BufferedReader(inputReader);
