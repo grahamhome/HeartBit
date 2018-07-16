@@ -158,20 +158,22 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     public void onRequestPermissionsResult(int requestCode, String permissions[], int grantResults[]) {
         switch (requestCode) {
             case PERMISSION_REQUEST_COARSE_LOCATION:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    connect();
-                } else {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Unable To Continue"); // TODO: make these strings into variables
-                    builder.setMessage("Since location access has not been granted, this app will not be able to scan for the Polar heart rate sensor.");
-                    builder.setPositiveButton(android.R.string.ok, null);
-                    builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                        @Override
-                        public void onDismiss(DialogInterface dialog) {
-                            System.exit(0);
-                        }
-                    });
-                    builder.show();
+                if (grantResults.length > 0) {
+                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        connect();
+                    } else {
+                        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        builder.setTitle("Unable To Continue"); // TODO: make these strings into variables
+                        builder.setMessage("Since location access has not been granted, this app will not be able to scan for the Polar heart rate sensor.");
+                        builder.setPositiveButton(android.R.string.ok, null);
+                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialog) {
+                                System.exit(0);
+                            }
+                        });
+                        builder.show();
+                    }
                 }
                 break;
             case PERMISSION_REQUEST_WRITE_EXTERNAL:

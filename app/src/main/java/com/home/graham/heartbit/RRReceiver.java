@@ -4,15 +4,30 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -25,8 +40,10 @@ public class RRReceiver extends Thread {
 
     private static final int DETECTION_WINDOW_SIZE = 20;
     private static final int CORRECTION_WINDOW_SIZE = 2;
+    private static final int MEDIAN_THRESHOLD = 250;
 
-    private static final int DRR_DETECTION_WINDOW_SIZE = 44;
+    private static final int DRR_DETECTION_WINDOW_SIZE = 90;
+    private static final double DRR_THRESHOLD = 3; //5.2;
 
     public static final int NEW_VALUE = 4;
     public static final int RECORDING_STARTED = 6;
@@ -35,7 +52,6 @@ public class RRReceiver extends Thread {
 
     private static ArrayList<Float> timeSequentialRRValues = new ArrayList<>();
     private static ArrayList<Float> cleanedRRValues;
-    private static ArrayList<Float> dRRValues = new ArrayList<>();
 
     private static boolean recording = false;
 
@@ -74,7 +90,6 @@ public class RRReceiver extends Thread {
                         timer.purge();
                         if (recording) {
                             timeSequentialRRValues.clear();
-                            dRRValues.clear();
                             (timer = new Timer()).schedule(new DisconnectorDetector(), 10000);
                             BreathingCoach.uiMessageHandler.obtainMessage(RECORDING_STARTED).sendToTarget();
                         } else {
@@ -102,7 +117,7 @@ public class RRReceiver extends Thread {
         timeSequentialRRValues.clear();
         File root = android.os.Environment.getExternalStorageDirectory();
         File directory = new File(root.getAbsolutePath() + "/heartbit");
-        File input = new File(directory, "5-18-2018-20-56-raw.txt");
+        File input = new File(directory, "2018-06-21 15-00-16.txt");
         try {
             FileReader inputReader = new FileReader(input);
             BufferedReader bufferedReader = new BufferedReader(inputReader);
@@ -149,10 +164,42 @@ public class RRReceiver extends Thread {
             outputWriter.flush();
             outputWriter.close();
             outputStream.close();
+            writeDataRemote(cleaned, name);
         } catch (IOException x) {
             BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Error: failed to write to external storage").sendToTarget();
         }
         BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, (cleaned ? "Cleaned" : "Raw") + " RR values written to storage").sendToTarget();
+    }
+
+    private static void writeDataRemote(boolean cleaned, String fileName) {
+        ArrayList<Float> data = (cleaned ? cleanedRRValues : timeSequentialRRValues);
+        if (data.isEmpty()) {
+            return;
+        }
+        StringBuilder rrString = new StringBuilder();
+        for (float rr : data) {
+            if (rrString.length() > 0) {
+                rrString.append("\r\n");
+            }
+            rrString.append(rr);
+        }
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference storageReference = storage.getReference().child("RR-Values/" + fileName);
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+        auth.signInAnonymously();
+        UploadTask uploadTask = storageReference.putBytes(rrString.toString().getBytes());
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, (exception.getCause())).sendToTarget();
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, ("File written to Firebase")).sendToTarget();
+            }
+        });
     }
 
     private static void cleanData() {
@@ -162,13 +209,12 @@ public class RRReceiver extends Thread {
             BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Data is too small to process for correction").sendToTarget();
             return;
         }
-        // Phase 1
         for (int i=0; i<size; i++) {
             float rr = cleanedRRValues.get(i);
             boolean clean = false;
             // All values must be in the range of a normal heart rate.
             boolean normal = rr >= 100 && rr <= 2000;
-            if (!normal || !isValid(i)) {
+            if (!normal || !isValid(i) || (i > 0 && !isValidDRR(i))) {
                 ArrayList<Float> window = new ArrayList<>();
                 boolean searching = true;
                 int offset = 1;
@@ -193,35 +239,62 @@ public class RRReceiver extends Thread {
                 }
             }
         }
-        // Phase 2
-        for (int i=1; i<size; i++) {
-            dRRValues.add(Math.abs(cleanedRRValues.get(i)-cleanedRRValues.get(i-1)));
-        }
-        for (int i=1; i<dRRValues.size()-1; i++) {
-            if (!isValidDRR(i) && !isValidDRR(i-1)) {
-                // TODO: clean. Need to recalculate DRR value?
-            }
-        }
     }
 
     private static boolean isValidDRR(int index) {
-        List<Float> window;
-        if (index - (DRR_DETECTION_WINDOW_SIZE/2) < 0) {
-            window = new ArrayList<>(dRRValues.subList(0, DRR_DETECTION_WINDOW_SIZE));
-            window.remove(dRRValues.get(index));
-        } else if (index + (DRR_DETECTION_WINDOW_SIZE/4) + 1 > dRRValues.size()) {
-            window = new ArrayList<>(dRRValues.subList(dRRValues.size()-DRR_DETECTION_WINDOW_SIZE-1, dRRValues.size()));
-            window.remove(dRRValues.get(index));
+        // Get left and right-hand drrs
+        float leftDRR = cleanedRRValues.get(index) - cleanedRRValues.get(index-1);
+        //float rightDRR = cleanedRRValues.get(index+1) - cleanedRRValues.get(index);
+        ArrayList<Float> window = new ArrayList<>(0);
+        int offset = 2;
+        boolean done = false;
+        while (!done) {
+            boolean newValue = false;
+            if (index-offset >= 0) {
+                window = insertInOrder(cleanedRRValues.get((index-offset)+1) - cleanedRRValues.get((index-offset)), window);
+                newValue = true;
+                if (window.size() == DRR_DETECTION_WINDOW_SIZE) {
+                    done = true;
+                    break;
+                }
+            }
+            if (index+offset < cleanedRRValues.size()) {
+                window = insertInOrder(cleanedRRValues.get(index+offset) - cleanedRRValues.get((index+offset)-1), window);
+                newValue = true;
+                if (window.size() == DRR_DETECTION_WINDOW_SIZE) {
+                    done = true;
+                    break;
+                }
+            }
+            offset++;
+            if (!newValue) {
+                done = true;
+            }
+        }
+        double adjustedQuartile = quartile(window) * DRR_THRESHOLD;
+        if (Math.abs(leftDRR) <= adjustedQuartile) { //|| Math.abs(rightDRR) <= adjustedQuartile) {
+            return true;
         } else {
-            window = new ArrayList<>(dRRValues.subList(index-(DRR_DETECTION_WINDOW_SIZE/2), index+(DRR_DETECTION_WINDOW_SIZE/2)));
-            window.remove(dRRValues.get(index));
+            return false;
         }
-        return (dRRValues.get(index) >= quartile(window) * 5.2) {
-
-        }
+        //return (Math.abs(leftDRR) <= adjustedQuartile || Math.abs(rightDRR) <= adjustedQuartile);
     }
 
-
+    private static float quartile(List<Float> data) {
+        ArrayList<Float> orderedData = order(data);
+        int size = orderedData.size();
+        int q1Index = (int) Math.floor(size * 0.25);
+        int q3Index = (int) Math.floor(size * 0.75);
+        float q1, q3 = 0;
+        if (size%4 == 0) {
+            q1 = (orderedData.get(q1Index) + orderedData.get(q1Index+1))/2;
+            q3 = (orderedData.get(q3Index) + orderedData.get(q3Index+1))/2;
+        } else {
+            q1 = orderedData.get(q1Index);
+            q3 = orderedData.get(q3Index);
+        }
+        return q3 - q1;
+    }
 
     private static boolean isValid(int index) {
         int size = cleanedRRValues.size();
@@ -237,7 +310,7 @@ public class RRReceiver extends Thread {
             window = new ArrayList<>(cleanedRRValues.subList(index-(DETECTION_WINDOW_SIZE/2), index+(DETECTION_WINDOW_SIZE/2)+1));
             window.remove(rr);
         }
-        return rr <= (median(window) + 250); // TODO: Adjust threshold based on BPM?
+        return rr <= (median(window) + MEDIAN_THRESHOLD); // TODO: Adjust threshold based on BPM?
     }
 
     private static float median(List<Float> data) {
@@ -245,27 +318,37 @@ public class RRReceiver extends Thread {
         if (size == 0) {
             return 0;
         }
-        ArrayList<Float> orderedData = new ArrayList<>(size);
-        for (float f : data) {
-            if (orderedData.isEmpty()) {
-                orderedData.add(f);
-            } else {
-                int i = 0;
-                while (orderedData.size() > i && orderedData.get(i) < f) {
-                    i++;
-                }
-                if (i < orderedData.size() - 1) {
-                    orderedData.add(i, f);
-                } else {
-                    orderedData.add(f);
-                }
-            }
-        }
+        ArrayList<Float> orderedData = order(data);
         if (size % 2 == 0) {
             return (orderedData.get((size/2)-1) + orderedData.get((size/2)+1))/2;
         } else {
             return orderedData.get((size-1)/2);
         }
+    }
+
+    private static ArrayList<Float> order(List<Float> data) {
+        ArrayList<Float> orderedData = new ArrayList<>(data.size());
+        for (float f : data) {
+            orderedData = insertInOrder(f, orderedData);
+        }
+        return orderedData;
+    }
+
+    private static ArrayList<Float> insertInOrder(float item, ArrayList<Float> list) {
+        if (list.isEmpty()) {
+            list.add(item);
+        } else {
+            int i = 0;
+            while (i < list.size() && list.get(i) < item) {
+                i++;
+            }
+            if (i < list.size() - 1) {
+                list.add(i, item);
+            } else {
+                list.add(item);
+            }
+        }
+        return list;
     }
 
     private static float mean(List<Float> data) {
