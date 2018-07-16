@@ -15,7 +15,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -40,7 +39,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     public static BluetoothAdapter bluetoothAdapter;
     private static BluetoothManager bluetoothManager;
     private static Polar polarService;
-    private static RRReceiver recieverService = new RRReceiver();
+    private static RRReceiver receiverService = new RRReceiver();
     public static Handler uiMessageHandler;
     private static Context context;
 
@@ -83,27 +82,27 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             public void handleMessage(Message inputMessage) {
                 switch (inputMessage.what) {
                     case Polar.NEW_MEASUREMENT:
-                        connectionDisplay.setText("Connected");
+                        connectionDisplay.setText(R.string.connection_status_ok);
                         connectionDisplay.setTextColor(Color.GREEN);
                     case Polar.CONNECTED:
-                        connectionDisplay.setText("Connected");
+                        connectionDisplay.setText(R.string.connection_status_ok);
                         connectionDisplay.setTextColor(Color.GREEN);
                         break;
                     case Polar.COULD_NOT_CONNECT:
                         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                        builder.setTitle("Unable To Connect"); // TODO: make these strings into variables
-                        builder.setMessage("The Polar HR monitor could not be found. Please ensure it is attached to the chest strap and is being worn correctly before continuing.");
+                        builder.setTitle(R.string.monitor_not_found_title);
+                        builder.setMessage(R.string.monitor_not_found_message);
                         builder.setPositiveButton(android.R.string.ok, null);
                         builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
                             @Override
                             public void onDismiss(DialogInterface dialog) {
-                                connectionDisplay.setText("Connecting");
+                                connectionDisplay.setText(R.string.connection_status_connecting);
                                 connectionDisplay.setTextColor(Color.BLACK);
                                 (polarService = new Polar(bluetoothAdapter, getApplicationContext())).start();
                             }
                         });
                         builder.show();
-                        connectionDisplay.setText("Disconnected");
+                        connectionDisplay.setText(R.string.connection_status_none);
                         connectionDisplay.setTextColor(Color.RED);
                         break;
                     case Polar.TIMEOUT:
@@ -123,10 +122,10 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         }
                         break;
                     case RRReceiver.RECORDING_STARTED:
-                        toggleButton.setText("Stop");
+                        toggleButton.setText(R.string.stop_btn_text);
                         break;
                     case RRReceiver.RECORDING_STOPPED:
-                        toggleButton.setText("Start");
+                        toggleButton.setText(R.string.start_btn_text);
                         break;
                     case RRReceiver.USER_MESSAGE:
                         Toast.makeText(getApplicationContext(), inputMessage.obj.toString(), Toast.LENGTH_SHORT).show();
@@ -149,7 +148,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             Intent enableBluetoothIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BT);
         }
-        recieverService.start();
+        receiverService.start();
         polarService = new Polar(bluetoothAdapter, getApplicationContext());
         polarService.start();
     }
@@ -163,8 +162,8 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         connect();
                     } else {
                         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                        builder.setTitle("Unable To Continue"); // TODO: make these strings into variables
-                        builder.setMessage("Since location access has not been granted, this app will not be able to scan for the Polar heart rate sensor.");
+                        builder.setTitle(R.string.permission_denied_title);
+                        builder.setMessage(R.string.permission_denied_message);
                         builder.setPositiveButton(android.R.string.ok, null);
                         builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
                             @Override
