@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         style="@style/Base.TextAppearance.AppCompat.Headline"
         android:layout_alignParentTop="true"
-        android:text="@string/intro_title"
+        android:text="@string/instructions_title"
         android:textAlignment="center"
         android:layout_marginBottom="20dp"/>
 
@@ -21,46 +21,25 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/introTitle"
-        android:layout_above="@+id/nameFieldLayout"
+        android:layout_above="@+id/okBtn"
         android:layout_marginBottom="20dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/intro_text"
+            android:text="@string/instructions"
             style="@style/Base.TextAppearance.AppCompat.Medium"/>
+
     </ScrollView>
 
-    <LinearLayout
-        android:id="@+id/nameFieldLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/startBtn"
-        android:orientation="horizontal"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/name_label_text"
-            style="@style/Base.TextAppearance.AppCompat.Medium"/>
-
-        <EditText
-            android:id="@+id/nameField"
-            android:layout_width="170dp"
-            android:layout_height="wrap_content"
-            style="@style/Base.TextAppearance.AppCompat.Medium"/>
-    </LinearLayout>
-
     <Button
-        android:id="@+id/startBtn"
+        android:id="@+id/okBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="10dp"
-        android:text="@string/start_btn_text"
+        android:text="@string/ok_btn_text"
         android:background="@drawable/button"/>
 
 </RelativeLayout>

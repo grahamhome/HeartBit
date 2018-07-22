@@ -6,28 +6,20 @@ import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -49,6 +41,7 @@ public class RRReceiver extends Thread {
     public static final int RECORDING_STARTED = 6;
     public static final int RECORDING_STOPPED = 7;
     public static final int USER_MESSAGE = 8;
+    public static final int DEVICE_ID_FOUND = 9;
 
     private static ArrayList<Float> timeSequentialRRValues = new ArrayList<>();
     private static ArrayList<Float> cleanedRRValues;
@@ -106,6 +99,9 @@ public class RRReceiver extends Thread {
                                 }
                             }
                         }
+                        break;
+                    case DEVICE_ID_FOUND:
+                        UserData.setMonitorID(inputMessage.obj.toString(), BreathingCoach.currentActivity);
                         break;
                 }
             }

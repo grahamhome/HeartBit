@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.home.graham.heartbit.RRReceiver.DEVICE_ID_FOUND;
+
 public class Polar extends Thread {
 
     private static final String ID = "3161D22C";
@@ -152,21 +154,20 @@ public class Polar extends Thread {
                 String names[] = name.split(" ");
                 if (names.length > 2) {
                     String deviceId = names[names.length-1];
-                    if( deviceId.equals(ID) ){
-                        if (!connected) {
-                            connected = true;
-                            scanLeDevice(false);
-                            BreathingCoach.uiMessageHandler.obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
-                            } else {
-                                bluetoothAdapter.stopLeScan(leScanCallback);
-                            }
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                device.connectGatt(context, false, bluetoothGattCallback, BluetoothDevice.TRANSPORT_LE);
-                            } else {
-                                device.connectGatt(context, false, bluetoothGattCallback);
-                            }
+                    if (!connected) {
+                        RRReceiver.rrHandler.obtainMessage(DEVICE_ID_FOUND, deviceId).sendToTarget();
+                        connected = true;
+                        scanLeDevice(false);
+                        BreathingCoach.uiMessageHandler.obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
+                        } else {
+                            bluetoothAdapter.stopLeScan(leScanCallback);
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            device.connectGatt(context, false, bluetoothGattCallback, BluetoothDevice.TRANSPORT_LE);
+                        } else {
+                            device.connectGatt(context, false, bluetoothGattCallback);
                         }
                     }
                 }

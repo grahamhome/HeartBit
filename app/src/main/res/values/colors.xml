@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorUnfinishedCircle">#0bb6ff</color>
+    <color name="colorFinishedCircle">#1966ff</color>
+    <color name="colorUnfinishedArc">#00ff92</color>
+    <color name="colorFinishedArc">#97ff00</color>
+    <color name="colorPrimary">#0bb6ff</color>
+    <color name="colorPrimaryDark">#138bff</color>
+    <color name="colorAccent">#97ff00</color>
 </resources>

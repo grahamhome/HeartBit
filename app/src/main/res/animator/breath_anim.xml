@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <objectAnimator
+        android:duration="5000"
+        android:propertyName="progress"
+        android:valueFrom="0f"
+        android:valueTo="100f"
+        android:valueType="floatType"
+        android:repeatMode="reverse"
+        android:repeatCount="infinite"/>
+</set>
