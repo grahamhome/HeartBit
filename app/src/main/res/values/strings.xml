@@ -19,16 +19,18 @@
     <string name="connection_status_none">Disconnected</string>
     <string name="connection_status_connecting">Connecting</string>
     <string name="elapsed_time_label">Elapsed Time:</string>
-    <string name="data_saved_message">Your data has been uploaded successfully.\n
-    You may now exit the app, or begin another breathing session.</string>
+    <string name="data_saved_message">Your data has been uploaded successfully.\nYou may now exit the app, or begin another breathing session.</string>
+    <string name="permission_request_explanation_title">Access Required</string>
+    <string name="permission_request_explanation">In a moment, we will ask you to grant a few permissions to HeartBit. These permissions are required for the app to function.</string>
     <string name="permission_denied_title">Unable To Continue</string>
     <string name="permission_denied_message">Since location access has not been granted, this app will not be able to scan for the heart rate monitor.</string>
     <string name="monitor_not_found_title">Unable To Connect</string>
     <string name="monitor_not_found_message">The heart rate monitor could not be found. Please ensure it is being worn correctly before continuing.</string>
     <string name="name_label_text">Your Name:</string>
     <string name="name_field_error">Please enter your first name.</string>
-    <string name="ok_btn_text">Ok</string>
+    <string name="ok_btn_text">OK</string>
     <string name="main_activity_title">5-Minute Breathing Session</string>
     <string name="breathe_in">inhale</string>
     <string name="breathe_out">exhale</string>
+    <string name="help_link_text">\?</string>
 </resources>

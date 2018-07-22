@@ -55,6 +55,14 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     private ArrayList<Float> rrValues = new ArrayList<>();
     public static Activity currentActivity;
 
+    private static boolean storage_permission_needed = false;
+    private static boolean location_permission_needed = false;
+
+    private static int breatheTimerTickMS = 30;
+    private static int singleBreathTimeMS = 5000;
+    private static int sessionTimerTickMS = 1000;
+    private static int sessionTotalTimeMS = 300000;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,44 +85,74 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             (toggleButton = findViewById(R.id.toggle)).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    recording = !recording;
-                    //RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
-                    if (recording) {
-                        (animationTimer = new Timer()).schedule(new TimerTask() {
-                            @Override
-                            public void run() {
-                                BreathingCoach.uiMessageHandler.obtainMessage(BREATHE_TIMER_TICK).sendToTarget();
-                            }
-                        }, 0, 30);
-                        animationTimer.schedule(new TimerTask() {
-                            @Override
-                            public void run() {
-                                BreathingCoach.uiMessageHandler.obtainMessage(SESSION_TIMER_TICK).sendToTarget();
-                            }
-                        }, 1000, 1000);
-                    } else {
-                        animationTimer.cancel();
-                        animationTimer.purge();
-                        breathProgress.setProgress(0);
-                        sessionProgress.setProgress(0);
-                    }
+                    toggleRecording();
+                }
+            });
 
+            (findViewById(R.id.helpLink)).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (!recording) {
+                        startActivity(new Intent(BreathingCoach.this, InfoActivity.class));
+                        finish();
+                    }
                 }
             });
 
             if (this.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_WRITE_EXTERNAL);
+                storage_permission_needed = true;
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
-                } else {
-                    connect();
+                    location_permission_needed = true;
                 }
-            } else {
-                connect();
             }
+
+            if (storage_permission_needed || location_permission_needed) {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.permission_request_explanation_title);
+                builder.setMessage(R.string.permission_request_explanation);
+                builder.setPositiveButton(android.R.string.ok, null);
+                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        if (storage_permission_needed) {
+                            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_WRITE_EXTERNAL);
+                        }
+                        if (location_permission_needed) {
+                            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
+                        }
+                    }
+                });
+                builder.show();
+            }
+        }
+    }
+
+    private void toggleRecording() {
+        recording = !recording;
+        //RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
+        if (recording) {
+            (animationTimer = new Timer()).schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    BreathingCoach.uiMessageHandler.obtainMessage(BREATHE_TIMER_TICK).sendToTarget();
+                }
+            }, 0, breatheTimerTickMS);
+            animationTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    BreathingCoach.uiMessageHandler.obtainMessage(SESSION_TIMER_TICK).sendToTarget();
+                }
+            }, sessionTimerTickMS, sessionTimerTickMS);
+            toggleButton.setText(getText(R.string.stop_btn_text));
+        } else {
+            animationTimer.cancel();
+            animationTimer.purge();
+            breathProgress.setProgress(0);
+            sessionProgress.setProgress(0);
+            toggleButton.setText(getText(R.string.start_btn_text));
         }
     }
 
@@ -181,10 +219,10 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                                 breathProgress.setText(getString(R.string.breathe_out));
                             }
                         }
-                        breathProgress.setProgress(breathProgress.getProgress() + (in ? 0.6f : -0.6f));
+                        breathProgress.setProgress(breathProgress.getProgress() + (in ? 100f/(singleBreathTimeMS/breatheTimerTickMS) : -0.6f));
                         break;
                     case SESSION_TIMER_TICK:
-                        sessionProgress.setProgress(sessionProgress.getProgress() + 1f/3);
+                        sessionProgress.setProgress(sessionProgress.getProgress() + 100f/(sessionTotalTimeMS/sessionTimerTickMS));
                         break;
                     default:
                         super.handleMessage(inputMessage);
