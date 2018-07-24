@@ -18,7 +18,7 @@
         android:layout_marginBottom="20dp"/>
 
     <TextView
-        android:id="@+id/helpLink"
+        android:id="@+id/help_link"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -31,7 +31,7 @@
         android:text="@string/help_link_text"/>
 
     <TextView
-        android:id="@+id/statusDisplay"
+        android:id="@+id/status_display"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAlignment="center"
@@ -41,7 +41,7 @@
     <com.home.graham.heartbit.ArcProgress
         android:id="@+id/arc_progress"
         android:layout_marginStart="60dp"
-        android:layout_below="@id/statusDisplay"
+        android:layout_below="@id/status_display"
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:layout_marginTop="80dp"
@@ -49,12 +49,21 @@
 
     <com.home.graham.heartbit.CircleProgress
         android:id="@+id/circle_progress"
-        android:layout_below="@id/statusDisplay"
+        android:layout_below="@id/status_display"
         android:layout_marginStart="50dp"
         android:layout_width="230dp"
         android:layout_height="230dp"
         android:layout_marginTop="112dp"
         android:layout_centerInParent="true"/>
+
+    <TextView
+        android:id="@+id/session_timer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/circle_progress"
+        android:layout_marginTop="20dp"
+        android:textAlignment="center"
+        android:textSize="20sp"/>
 
     <Button
         android:id="@+id/toggle"

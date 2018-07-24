@@ -10,7 +10,8 @@
     </string>
     <string name="start_btn_text">Start</string>
     <string name="stop_btn_text">Stop</string>
-    <string name="early_terminaation_warning">The current breathing session is less than 5 minutes. If you stop now, we won\'t get the high-quality data we need for our research.\n\nAre you sure you want to stop the session now?
+    <string name="early_termination_warning_title">Are you sure?</string>
+    <string name="early_termination_warning">The current breathing session is less than 5 minutes. If you stop now, we won\'t get the high-quality data we need for our research.\n\nAre you sure you want to stop the session now?
     </string>
     <string name="stop_session_text">Stop Session</string>
     <string name="continue_session_text">Continue Session</string>
@@ -18,7 +19,7 @@
     <string name="connection_status_ok">Connected</string>
     <string name="connection_status_none">Disconnected</string>
     <string name="connection_status_connecting">Connecting</string>
-    <string name="elapsed_time_label">Elapsed Time:</string>
+    <string name="remaining_time_label">Time Remaining</string>
     <string name="data_saved_message">Your data has been uploaded successfully.\nYou may now exit the app, or begin another breathing session.</string>
     <string name="permission_request_explanation_title">Access Required</string>
     <string name="permission_request_explanation">In a moment, we will ask you to grant a few permissions to HeartBit. These permissions are required for the app to function.</string>
@@ -28,7 +29,6 @@
     <string name="monitor_not_found_message">The heart rate monitor could not be found. Please ensure it is being worn correctly before continuing.</string>
     <string name="name_label_text">Your Name:</string>
     <string name="name_field_error">Please enter your first name.</string>
-    <string name="ok_btn_text">OK</string>
     <string name="main_activity_title">5-Minute Breathing Session</string>
     <string name="breathe_in">inhale</string>
     <string name="breathe_out">exhale</string>

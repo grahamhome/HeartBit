@@ -8,7 +8,7 @@
     android:layout_margin="20dp">
 
     <TextView
-        android:id="@+id/introTitle"
+        android:id="@+id/intro_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         style="@style/Base.TextAppearance.AppCompat.Headline"
@@ -20,8 +20,8 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/introTitle"
-        android:layout_above="@+id/okBtn"
+        android:layout_below="@+id/intro_title"
+        android:layout_above="@+id/ok_btn"
         android:layout_marginBottom="20dp">
 
         <TextView
@@ -33,13 +33,13 @@
     </ScrollView>
 
     <Button
-        android:id="@+id/okBtn"
+        android:id="@+id/ok_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="10dp"
-        android:text="@string/ok_btn_text"
+        android:text="@android:string/ok"
         android:background="@drawable/button"/>
 
 </RelativeLayout>

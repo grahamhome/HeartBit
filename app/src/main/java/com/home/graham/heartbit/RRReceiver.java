@@ -50,8 +50,6 @@ public class RRReceiver extends Thread {
 
     private static Timer timer = new Timer();
 
-    private static final boolean TESTING = true;
-
     @Override
     public void run() {
         setUpMessageHandler();
@@ -88,15 +86,9 @@ public class RRReceiver extends Thread {
                         } else {
                             BreathingCoach.uiMessageHandler.obtainMessage(RECORDING_STOPPED).sendToTarget();
                             if (checkWriteCapability()) {
-                                if (!TESTING) {
-                                    writeData(false);
-                                    cleanData();
-                                    writeData(true);
-                                } else {
-                                    importData();
-                                    cleanData();
-                                    writeData(true);
-                                }
+                                writeDataRemote(false);
+                                cleanData();
+                                writeDataRemote(true);
                             }
                         }
                         break;
@@ -137,37 +129,7 @@ public class RRReceiver extends Thread {
         return true;
     }
 
-    private static void writeData(boolean cleaned) {
-        ArrayList<Float> data = (cleaned ? cleanedRRValues : timeSequentialRRValues);
-        if (data.isEmpty()) {
-            return;
-        }
-        File root = android.os.Environment.getExternalStorageDirectory();
-        File directory = new File(root.getAbsolutePath() + "/heartbit");
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-        Calendar now = Calendar.getInstance();
-        String name = now.get(Calendar.MONTH) + "-" + now.get(Calendar.DAY_OF_MONTH) + "-" + now.get(Calendar.YEAR) + "-" +
-                now.get(Calendar.HOUR_OF_DAY) + "-" + now.get(Calendar.MINUTE) + "-" + (cleaned ? "cleaned" : "raw") + ".txt";
-        File output = new File(directory, name);
-        try {
-            FileOutputStream outputStream = new FileOutputStream(output);
-            PrintWriter outputWriter = new PrintWriter(outputStream);
-            for (float rr : data) {
-                outputWriter.println(Math.round(rr));
-            }
-            outputWriter.flush();
-            outputWriter.close();
-            outputStream.close();
-            writeDataRemote(cleaned, name);
-        } catch (IOException x) {
-            BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Error: failed to write to external storage").sendToTarget();
-        }
-        BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, (cleaned ? "Cleaned" : "Raw") + " RR values written to storage").sendToTarget();
-    }
-
-    private static void writeDataRemote(boolean cleaned, String fileName) {
+    private static void writeDataRemote(boolean cleaned) {
         ArrayList<Float> data = (cleaned ? cleanedRRValues : timeSequentialRRValues);
         if (data.isEmpty()) {
             return;
@@ -179,6 +141,9 @@ public class RRReceiver extends Thread {
             }
             rrString.append(rr);
         }
+        Calendar now = Calendar.getInstance();
+        String fileName = now.get(Calendar.MONTH) + "-" + now.get(Calendar.DAY_OF_MONTH) + "-" + now.get(Calendar.YEAR) + "-" +
+                now.get(Calendar.HOUR_OF_DAY) + "-" + now.get(Calendar.MINUTE) + "-" + (cleaned ? "cleaned" : "raw") + ".txt";
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageReference = storage.getReference().child("RR-Values/" + fileName);
         FirebaseAuth auth = FirebaseAuth.getInstance();

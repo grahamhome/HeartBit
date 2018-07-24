@@ -47,7 +47,7 @@ public class ArcProgress extends View {
     private final float default_bottom_text_size = 10;
     private final float default_stroke_width = 40;
     private final String default_suffix_text = "";
-    private final int default_max = 100;
+    private final int default_max = BreathingCoach.sessionTotalTimeMS;
     private final float default_arc_angle = 360 * 0.8f;
     private float default_text_size = 18;
     private final int min_size = 100;

@@ -16,9 +16,9 @@ public class IntroActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_intro);
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-        nameField = (EditText) findViewById(R.id.nameField);
+        nameField = (EditText) findViewById(R.id.name_field);
 
-        findViewById(R.id.startBtn).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.start_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 String name = nameField.getText().toString();

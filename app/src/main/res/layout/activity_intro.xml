@@ -8,7 +8,7 @@
     android:layout_margin="20dp">
 
     <TextView
-        android:id="@+id/introTitle"
+        android:id="@+id/intro_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         style="@style/Base.TextAppearance.AppCompat.Headline"
@@ -20,8 +20,8 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/introTitle"
-        android:layout_above="@+id/nameFieldLayout"
+        android:layout_below="@+id/intro_title"
+        android:layout_above="@+id/name_field_layout"
         android:layout_marginBottom="20dp">
 
         <TextView
@@ -32,10 +32,10 @@
     </ScrollView>
 
     <LinearLayout
-        android:id="@+id/nameFieldLayout"
+        android:id="@+id/name_field_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/startBtn"
+        android:layout_above="@+id/start_btn"
         android:orientation="horizontal"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="20dp">
@@ -47,14 +47,14 @@
             style="@style/Base.TextAppearance.AppCompat.Medium"/>
 
         <EditText
-            android:id="@+id/nameField"
+            android:id="@+id/name_field"
             android:layout_width="170dp"
             android:layout_height="wrap_content"
             style="@style/Base.TextAppearance.AppCompat.Medium"/>
     </LinearLayout>
 
     <Button
-        android:id="@+id/startBtn"
+        android:id="@+id/start_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"

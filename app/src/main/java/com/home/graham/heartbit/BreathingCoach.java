@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -28,45 +29,52 @@ import java.util.TimerTask;
 
 public class BreathingCoach extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
+    // Thread messaging codes
     private final static int REQUEST_ENABLE_BT = 1;
     private final static int PERMISSION_REQUEST_COARSE_LOCATION = 1;
-    private final static int PERMISSION_REQUEST_WRITE_EXTERNAL = 2;
-
     public final static int TOGGLE_RECORDING = 5;
-    public final static int BREATHE_TIMER_TICK = 10;
-    public final static int SESSION_TIMER_TICK = 11;
+    public final static int SESSION_TIMER_TICK = 10;
+    public final static int CHRONOMETER_TICK = 11;
 
+    // UI elements
     private static TextView connectionDisplay;
     private static Button toggleButton;
     private static ArcProgress sessionProgress;
     private static CircleProgress breathProgress;
+    private static TextView sessionTimer;
+    private static TextView helpLink;
 
+    // Session variables
     private static boolean recording = false;
-    private static Timer animationTimer;
-    private static boolean in = true;
+    private static boolean in = false;
+    private ArrayList<Float> rrValues = new ArrayList<>();
 
+    // Polar connection variables
     public static BluetoothAdapter bluetoothAdapter;
     private static BluetoothManager bluetoothManager;
     private static Polar polarService;
     private static RRReceiver receiverService = new RRReceiver();
     public static Handler uiMessageHandler;
-    private static Context context;
 
-    private ArrayList<Float> rrValues = new ArrayList<>();
+    // Activity variables
     public static Activity currentActivity;
 
-    private static boolean storage_permission_needed = false;
+    // Permission variables
     private static boolean location_permission_needed = false;
 
-    private static int breatheTimerTickMS = 30;
-    private static int singleBreathTimeMS = 5000;
-    private static int sessionTimerTickMS = 1000;
-    private static int sessionTotalTimeMS = 300000;
+    // Timer variables TODO: Make a timer class
+    private static int timerTickMS = 25;
+    public static int singleBreathTimeMS = 5000;
+    public static int sessionTotalTimeMS = 300000;
+    private static int secondsElapsed = 0;
+    private static Timer animationTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         currentActivity = this;
+
+        // Check if intro/info activities need to be viewed
         if (!UserData.getIntroViewed(BreathingCoach.this)) {
             startActivity(new Intent(BreathingCoach.this, IntroActivity.class));
             finish();
@@ -74,13 +82,13 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             startActivity(new Intent(BreathingCoach.this, InfoActivity.class));
             finish();
         } else {
+
+            // Set up UI
             setContentView(R.layout.activity_breathing_coach);
-            (connectionDisplay = findViewById(R.id.statusDisplay)).setText("Connecting");
-            context = this;
+            (connectionDisplay = findViewById(R.id.status_display)).setText("Connecting");
             (breathProgress = findViewById(R.id.circle_progress)).setProgress(0);
-            breathProgress.setText(getString(R.string.breathe_in));
             (sessionProgress = findViewById(R.id.arc_progress)).setProgress(0);
-            setUpMessageHandler();
+            (sessionTimer = findViewById(R.id.session_timer)).setText("00:00");
 
             (toggleButton = findViewById(R.id.toggle)).setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -89,7 +97,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 }
             });
 
-            (findViewById(R.id.helpLink)).setOnClickListener(new View.OnClickListener() {
+            (helpLink = findViewById(R.id.help_link)).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     if (!recording) {
@@ -99,17 +107,14 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 }
             });
 
-            if (this.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                storage_permission_needed = true;
-            }
+            setUpMessageHandler();
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    location_permission_needed = true;
-                }
-            }
+            // Check for permissions
+            location_permission_needed = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) &&
+                    (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED));
 
-            if (storage_permission_needed || location_permission_needed) {
+            // Request permissions
+            if (location_permission_needed) {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle(R.string.permission_request_explanation_title);
                 builder.setMessage(R.string.permission_request_explanation);
@@ -117,9 +122,6 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
                     @Override
                     public void onDismiss(DialogInterface dialog) {
-                        if (storage_permission_needed) {
-                            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_WRITE_EXTERNAL);
-                        }
                         if (location_permission_needed) {
                             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
                         }
@@ -131,33 +133,65 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     }
 
     private void toggleRecording() {
-        recording = !recording;
         //RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
-        if (recording) {
-            (animationTimer = new Timer()).schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    BreathingCoach.uiMessageHandler.obtainMessage(BREATHE_TIMER_TICK).sendToTarget();
-                }
-            }, 0, breatheTimerTickMS);
-            animationTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    BreathingCoach.uiMessageHandler.obtainMessage(SESSION_TIMER_TICK).sendToTarget();
-                }
-            }, sessionTimerTickMS, sessionTimerTickMS);
+        if (!recording) {
+            breathProgress.setText(getString(R.string.breathe_in));
             toggleButton.setText(getText(R.string.stop_btn_text));
+            helpLink.setTextColor(Color.GRAY);
+            recording = true;
+            secondsElapsed = 0;
+            (animationTimer = new Timer()).schedule(new TimerTask() {
+                long lastTickTime = 0;
+                long timeDifference = 0;
+                @Override
+                public void run() {
+                    long now = SystemClock.elapsedRealtime();
+                    if (lastTickTime == 0) {
+                        lastTickTime = SystemClock.elapsedRealtime();
+                    } else {
+                        timeDifference = now-lastTickTime;
+                    }
+                    BreathingCoach.uiMessageHandler.obtainMessage(SESSION_TIMER_TICK).sendToTarget();
+                    if (Math.round(timeDifference-1000f) >= 1) {
+                        BreathingCoach.uiMessageHandler.obtainMessage(CHRONOMETER_TICK).sendToTarget();
+                        lastTickTime = now;
+                    }
+                }
+            }, 0, timerTickMS);
         } else {
-            animationTimer.cancel();
-            animationTimer.purge();
-            breathProgress.setProgress(0);
-            sessionProgress.setProgress(0);
-            toggleButton.setText(getText(R.string.start_btn_text));
+            if (secondsElapsed < sessionTotalTimeMS/1000){
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.early_termination_warning_title);
+                builder.setMessage(R.string.early_termination_warning);
+                builder.setNegativeButton(android.R.string.no, null);
+                builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        stopRecording();
+                    }
+                });
+                builder.show();
+            } else {
+                stopRecording();
+            }
         }
+    }
+
+    private void stopRecording() {
+        recording = false;
+        animationTimer.cancel();
+        helpLink.setTextColor(getColor(R.color.colorPrimaryDark));
+        sessionTimer.setTextColor(Color.BLACK);
+        sessionTimer.setText("00:00");
+        breathProgress.setProgress(0);
+        sessionProgress.setProgress(0);
+        breathProgress.setText(null);
+        toggleButton.setText(getText(R.string.start_btn_text));
     }
 
     private void setUpMessageHandler() {
         uiMessageHandler = new Handler(Looper.getMainLooper()) {
+            boolean flipped = false;
             @Override
             public void handleMessage(Message inputMessage) {
                 switch (inputMessage.what) {
@@ -210,19 +244,27 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                     case RRReceiver.USER_MESSAGE:
                         Toast.makeText(getApplicationContext(), inputMessage.obj.toString(), Toast.LENGTH_SHORT).show();
                         break;
-                    case BREATHE_TIMER_TICK:
-                        if ((in && breathProgress.getProgress() >= 100) || (!in && breathProgress.getProgress() <= 0)) {
-                            in = !in;
-                            if (in) {
-                                breathProgress.setText(getString(R.string.breathe_in));
-                            } else {
-                                breathProgress.setText(getString(R.string.breathe_out));
-                            }
-                        }
-                        breathProgress.setProgress(breathProgress.getProgress() + (in ? 100f/(singleBreathTimeMS/breatheTimerTickMS) : -0.6f));
-                        break;
                     case SESSION_TIMER_TICK:
-                        sessionProgress.setProgress(sessionProgress.getProgress() + 100f/(sessionTotalTimeMS/sessionTimerTickMS));
+                        float progress = breathProgress.getProgress();
+                        if (flipped = ((in && progress == singleBreathTimeMS) || (!in && progress == 0))) {
+                            in = !in;
+                        }
+                        breathProgress.setProgress(progress + (timerTickMS * (in ? 1 : -1)));
+                        sessionProgress.setProgress(sessionProgress.getProgress() + timerTickMS);
+                        if (flipped) {
+                            breathProgress.setText(in ? getString(R.string.breathe_in) : getString(R.string.breathe_out));
+                        }
+                        break;
+                    case CHRONOMETER_TICK:
+                        secondsElapsed++;
+                        if (secondsElapsed <= sessionTotalTimeMS/1000) {
+                            int mins = secondsElapsed / 60;
+                            int sec = secondsElapsed % 60;
+                            String time = (mins > 9 ? mins : "0" + mins) + ":" + (sec > 9 ? sec : "0" + sec);
+                            sessionTimer.setText(time);
+                        } else {
+                            sessionTimer.setTextColor(getColor(R.color.colorUnfinishedArc));
+                        }
                         break;
                     default:
                         super.handleMessage(inputMessage);
@@ -267,15 +309,6 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         });
                         builder.show();
                     }
-                }
-                break;
-            case PERMISSION_REQUEST_WRITE_EXTERNAL:
-                if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Unable To Save"); // TODO: make these strings into variables
-                    builder.setMessage("Since write permission has not been granted, this app will not be able to export the RR data it collects.");
-                    builder.setPositiveButton(android.R.string.ok, null);
-                    builder.show();
                 }
                 break;
         }

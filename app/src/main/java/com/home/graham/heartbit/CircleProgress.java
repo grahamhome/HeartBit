@@ -32,7 +32,7 @@ public class CircleProgress extends View {
     private final int default_finished_color = ContextCompat.getColor(BreathingCoach.currentActivity, R.color.colorFinishedCircle);
     private final int default_unfinished_color = ContextCompat.getColor(BreathingCoach.currentActivity, R.color.colorUnfinishedCircle);
     private final int default_text_color = Color.WHITE;
-    private final int default_max = 100;
+    private final int default_max = BreathingCoach.singleBreathTimeMS;
     private final float default_text_size = 80;
     private final int min_size = 100;
 
