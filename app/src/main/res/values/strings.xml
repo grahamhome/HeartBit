@@ -2,11 +2,10 @@
     <string name="app_name">HeartBit</string>
     <string name="ble_not_supported">Sorry, Bluetooth Low Energy is not supported on this device.</string>
     <string name="intro_title">Welcome to HeartBit!</string>
-    <string name="intro_text">This application will coach you through a simple breathing routine. During this time, it will collect information about your heart rate from a Polar heart rate monitor. This data will be stored on our secure server for research purposes.\n\nBy using this app, you are helping us research the effect of heart rate variability (HRV) on
-    overall health and wellness. Thank you for participating!\n\nWhen you are ready to begin, enter your first name in the field below and click \"Start\" to begin using the app.
+    <string name="intro_text">This application will coach you through a simple breathing routine. During this time, it will collect information about your heart rate from a Polar heart rate monitor. This data will be stored on our secure server for research purposes.\n\nBy using this app, you are helping us research the effect of heart rate variability (HRV) on overall health and wellness. Thank you for participating!\n\nWhen you are ready to begin, enter your first name in the field below and click \"Start\" to begin using the app.
     </string>
     <string name="instructions_title">Instructions</string>
-    <string name="instructions">To use this app, just follow these steps:\n\n1. Put on your Polar heart rate monitor and wait until the word \"Connected\" appears at the top of the screen.\n\n2. Press \"Start\" to begin your breathing session. Breathe in and out as instructed by the app. Please do not close the application or engage in other activities during the breathing session.\n\n3. After 5 minutes, you can stop the breathing session at any time by pressing the \"Stop\" button. You can stop the session before 5 minutes if you need to, but this will provide less useful data for our research.\n\n4. Wait until the app says that your data has been saved before closing the app.\n\nYou can review these instructions at any time by clicking the question mark at the top of the screen.
+    <string name="instructions">To use this app, just follow these steps:\n\n1. Put on your Polar heart rate monitor and wait until the word \"Connected\" appears at the top of the screen.\n\n2. Press \"Start\" to begin your breathing session. Breathe in and out as instructed by the app. Please do not close the application or engage in other activities during the breathing session.\n\n3. After 5 minutes, you can stop the breathing session at any time by pressing the \"Stop\" button. You can stop the session before 5 minutes if you need to, but this will provide less useful data for our research.\n\n4. Wait until the app says that your data has been saved before closing the app.\n\nYou can review these instructions at any time by clicking the question mark on the main screen.
     </string>
     <string name="start_btn_text">Start</string>
     <string name="stop_btn_text">Stop</string>
@@ -22,7 +21,7 @@
     <string name="remaining_time_label">Time Remaining</string>
     <string name="data_saved_message">Your data has been uploaded successfully.\nYou may now exit the app, or begin another breathing session.</string>
     <string name="permission_request_explanation_title">Access Required</string>
-    <string name="permission_request_explanation">In a moment, we will ask you to grant a few permissions to HeartBit. These permissions are required for the app to function.</string>
+    <string name="permission_request_explanation">In a moment, we will ask you to grant one or more permissions to HeartBit. These permissions are required for the app to function.</string>
     <string name="permission_denied_title">Unable To Continue</string>
     <string name="permission_denied_message">Since location access has not been granted, this app will not be able to scan for the heart rate monitor.</string>
     <string name="monitor_not_found_title">Unable To Connect</string>

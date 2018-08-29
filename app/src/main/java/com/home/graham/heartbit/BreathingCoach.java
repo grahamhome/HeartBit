@@ -22,8 +22,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -45,15 +43,14 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     private static TextView helpLink;
 
     // Session variables
-    private static boolean recording = false;
+    private static boolean connected = false;
     private static boolean in = false;
-    private ArrayList<Float> rrValues = new ArrayList<>();
 
     // Polar connection variables
     public static BluetoothAdapter bluetoothAdapter;
     private static BluetoothManager bluetoothManager;
     private static Polar polarService;
-    private static RRReceiver receiverService = new RRReceiver();
+    private static RRReceiver receiverService;
     public static Handler uiMessageHandler;
 
     // Activity variables
@@ -100,14 +97,12 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             (helpLink = findViewById(R.id.help_link)).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    if (!recording) {
+                    if (!RRReceiver.recording) {
                         startActivity(new Intent(BreathingCoach.this, InfoActivity.class));
                         finish();
                     }
                 }
             });
-
-            setUpMessageHandler();
 
             // Check for permissions
             location_permission_needed = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) &&
@@ -128,36 +123,41 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                     }
                 });
                 builder.show();
+            } else {
+                setUpMessageHandler();
+                connect();
             }
         }
     }
 
     private void toggleRecording() {
-        //RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
-        if (!recording) {
-            breathProgress.setText(getString(R.string.breathe_in));
-            toggleButton.setText(getText(R.string.stop_btn_text));
-            helpLink.setTextColor(Color.GRAY);
-            recording = true;
-            secondsElapsed = 0;
-            (animationTimer = new Timer()).schedule(new TimerTask() {
-                long lastTickTime = 0;
-                long timeDifference = 0;
-                @Override
-                public void run() {
-                    long now = SystemClock.elapsedRealtime();
-                    if (lastTickTime == 0) {
-                        lastTickTime = SystemClock.elapsedRealtime();
-                    } else {
-                        timeDifference = now-lastTickTime;
+        if (!RRReceiver.recording) {
+            if (connected) {
+                RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
+                breathProgress.setText(getString(R.string.breathe_in));
+                toggleButton.setText(getText(R.string.stop_btn_text));
+                helpLink.setTextColor(Color.GRAY);
+                secondsElapsed = 0;
+                (animationTimer = new Timer()).schedule(new TimerTask() {
+                    long lastTickTime = 0;
+                    long timeDifference = 0;
+
+                    @Override
+                    public void run() {
+                        long now = SystemClock.elapsedRealtime();
+                        if (lastTickTime == 0) {
+                            lastTickTime = SystemClock.elapsedRealtime();
+                        } else {
+                            timeDifference = now - lastTickTime;
+                        }
+                        BreathingCoach.uiMessageHandler.obtainMessage(SESSION_TIMER_TICK).sendToTarget();
+                        if (Math.round(timeDifference - 1000f) >= 1) {
+                            BreathingCoach.uiMessageHandler.obtainMessage(CHRONOMETER_TICK).sendToTarget();
+                            lastTickTime = now;
+                        }
                     }
-                    BreathingCoach.uiMessageHandler.obtainMessage(SESSION_TIMER_TICK).sendToTarget();
-                    if (Math.round(timeDifference-1000f) >= 1) {
-                        BreathingCoach.uiMessageHandler.obtainMessage(CHRONOMETER_TICK).sendToTarget();
-                        lastTickTime = now;
-                    }
-                }
-            }, 0, timerTickMS);
+                }, 0, timerTickMS);
+            }
         } else {
             if (secondsElapsed < sessionTotalTimeMS/1000){
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -178,7 +178,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     }
 
     private void stopRecording() {
-        recording = false;
+        RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
         animationTimer.cancel();
         helpLink.setTextColor(getColor(R.color.colorPrimaryDark));
         sessionTimer.setTextColor(Color.BLACK);
@@ -201,9 +201,12 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                     case Polar.CONNECTED:
                         connectionDisplay.setText(R.string.connection_status_ok);
                         connectionDisplay.setTextColor(Color.GREEN);
+                        toggleButton.setBackground(getDrawable(R.drawable.button));
+                        toggleButton.setEnabled(true);
+                        connected = true;
                         break;
                     case Polar.COULD_NOT_CONNECT:
-                        /*AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                        AlertDialog.Builder builder = new AlertDialog.Builder(BreathingCoach.this);
                         builder.setTitle(R.string.monitor_not_found_title);
                         builder.setMessage(R.string.monitor_not_found_message);
                         builder.setPositiveButton(android.R.string.ok, null);
@@ -212,34 +215,18 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                             public void onDismiss(DialogInterface dialog) {
                                 connectionDisplay.setText(R.string.connection_status_connecting);
                                 connectionDisplay.setTextColor(Color.BLACK);
+                                polarService.interrupt();
                                 (polarService = new Polar(bluetoothAdapter, getApplicationContext())).start();
                             }
                         });
                         builder.show();
                         connectionDisplay.setText(R.string.connection_status_none);
-                        connectionDisplay.setTextColor(Color.RED);*/
+                        connectionDisplay.setTextColor(Color.RED);
                         break;
                     case Polar.TIMEOUT:
                         Toast.makeText(getApplicationContext(), "Make sure Polar is secure", Toast.LENGTH_SHORT).show();
                         connectionDisplay.setText("Waiting for data");
                         connectionDisplay.setTextColor(Color.BLACK);
-                        break;
-                    case RRReceiver.NEW_VALUE:
-                        rrValues.add((float)inputMessage.obj);
-                        //rrDisplay.setText(inputMessage.obj.toString() + System.lineSeparator() + rrDisplay.getText());
-                        if (rrValues.size() > 5) {
-                            float tot = 0;
-                            for (float f : rrValues.subList(rrValues.size() - 6, rrValues.size() - 1)) {
-                                tot += f;
-                            }
-                            //bpmDisplay.setText(String.valueOf(60000/Math.round((tot / 5))));
-                        }
-                        break;
-                    case RRReceiver.RECORDING_STARTED:
-                        toggleButton.setText(R.string.stop_btn_text);
-                        break;
-                    case RRReceiver.RECORDING_STOPPED:
-                        toggleButton.setText(R.string.start_btn_text);
                         break;
                     case RRReceiver.USER_MESSAGE:
                         Toast.makeText(getApplicationContext(), inputMessage.obj.toString(), Toast.LENGTH_SHORT).show();
@@ -284,7 +271,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             Intent enableBluetoothIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BT);
         }
-        receiverService.start();
+        (receiverService = new RRReceiver()).start();
         polarService = new Polar(bluetoothAdapter, getApplicationContext());
         polarService.start();
     }
@@ -295,6 +282,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             case PERMISSION_REQUEST_COARSE_LOCATION:
                 if (grantResults.length > 0) {
                     if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        setUpMessageHandler();
                         connect();
                     } else {
                         final AlertDialog.Builder builder = new AlertDialog.Builder(this);

@@ -13,6 +13,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +23,6 @@ import static com.home.graham.heartbit.RRReceiver.DEVICE_ID_FOUND;
 
 public class Polar extends Thread {
 
-    private static final String ID = "3161D22C";
     private static boolean connected = false;
 
     // Factor to convert RR values to milliseconds
@@ -152,7 +152,7 @@ public class Polar extends Thread {
             String name = new String(content.get(AD_TYPE.GAP_ADTYPE_LOCAL_NAME_COMPLETE));
             if (name.startsWith("Polar ")) {
                 String names[] = name.split(" ");
-                if (names.length > 2) {
+                if (names.length >= 2) {
                     String deviceId = names[names.length-1];
                     if (!connected) {
                         RRReceiver.rrHandler.obtainMessage(DEVICE_ID_FOUND, deviceId).sendToTarget();
@@ -269,7 +269,7 @@ public class Polar extends Thread {
     };
 
     private boolean mScanning;
-    private Handler mHandler = new Handler();
+    private Handler mHandler = new Handler(Looper.getMainLooper());
 
     // Stops scanning if Polar is not found after 10 seconds.
     private static final long SCAN_PERIOD = 10000;

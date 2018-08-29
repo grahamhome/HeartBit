@@ -1,27 +1,27 @@
 {
   "project_info": {
-    "project_number": "885227772096",
-    "firebase_url": "https://heartbit-2018.firebaseio.com",
-    "project_id": "heartbit-2018",
-    "storage_bucket": "heartbit-2018.appspot.com"
+    "project_number": "151039416338",
+    "firebase_url": "https://hrv-research-app.firebaseio.com",
+    "project_id": "hrv-research-app",
+    "storage_bucket": "hrv-research-app.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:885227772096:android:f1cae874ba6a477f",
+        "mobilesdk_app_id": "1:151039416338:android:f1cae874ba6a477f",
         "android_client_info": {
           "package_name": "com.home.graham.heartbit"
         }
       },
       "oauth_client": [
         {
-          "client_id": "885227772096-sp4cbjl2v0fjqhkgg712f5lskalq6i0o.apps.googleusercontent.com",
+          "client_id": "151039416338-jq10ukhv6mpaq47m4dvj1bqcb67knil1.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBxkXdmBHtPS7enSP-Yw8pIefjqO0K6CoA"
+          "current_key": "AIzaSyC3e6nkg0Z183AHE-rwfkYpwuvXs-LXB0c"
         }
       ],
       "services": {

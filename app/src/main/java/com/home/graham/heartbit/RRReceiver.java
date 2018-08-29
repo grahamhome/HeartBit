@@ -37,16 +37,13 @@ public class RRReceiver extends Thread {
     private static final int DRR_DETECTION_WINDOW_SIZE = 90;
     private static final double DRR_THRESHOLD = 3; //5.2;
 
-    public static final int NEW_VALUE = 4;
-    public static final int RECORDING_STARTED = 6;
-    public static final int RECORDING_STOPPED = 7;
     public static final int USER_MESSAGE = 8;
     public static final int DEVICE_ID_FOUND = 9;
 
     private static ArrayList<Float> timeSequentialRRValues = new ArrayList<>();
     private static ArrayList<Float> cleanedRRValues;
 
-    private static boolean recording = false;
+    public static boolean recording = false;
 
     private static Timer timer = new Timer();
 
@@ -62,7 +59,7 @@ public class RRReceiver extends Thread {
                 switch (inputMessage.what) {
                     case Polar.CONNECTED:
                         if (recording) {
-                            (timer = new Timer()).schedule(new DisconnectorDetector(), 10000);
+                            (timer = new Timer()).schedule(new DisconnecterDetector(), 10000);
                         }
                         BreathingCoach.uiMessageHandler.obtainMessage(Polar.CONNECTED).sendToTarget();
                         break;
@@ -70,8 +67,7 @@ public class RRReceiver extends Thread {
                         if (recording) {
                             timer.cancel();
                             timer.purge();
-                            (timer = new Timer()).schedule(new DisconnectorDetector(), 10000);
-                            BreathingCoach.uiMessageHandler.obtainMessage(Polar.NEW_MEASUREMENT).sendToTarget();
+                            (timer = new Timer()).schedule(new DisconnecterDetector(), 10000);
                             timeSequentialRRValues.add(((Polar.PolarTask) inputMessage.obj).rr);
                         }
                         break;
@@ -81,15 +77,14 @@ public class RRReceiver extends Thread {
                         timer.purge();
                         if (recording) {
                             timeSequentialRRValues.clear();
-                            (timer = new Timer()).schedule(new DisconnectorDetector(), 10000);
-                            BreathingCoach.uiMessageHandler.obtainMessage(RECORDING_STARTED).sendToTarget();
+                            (timer = new Timer()).schedule(new DisconnecterDetector(), 10000);
                         } else {
-                            BreathingCoach.uiMessageHandler.obtainMessage(RECORDING_STOPPED).sendToTarget();
-                            if (checkWriteCapability()) {
-                                writeDataRemote(false);
-                                cleanData();
-                                writeDataRemote(true);
-                            }
+                            // testing only
+                            //importData();
+                            // end testing
+                            writeDataRemote(false);
+                            cleanData();
+                            writeDataRemote(true);
                         }
                         break;
                     case DEVICE_ID_FOUND:
@@ -100,7 +95,6 @@ public class RRReceiver extends Thread {
         };
     }
 
-    // TODO: remove
     private static void importData() {
         timeSequentialRRValues.clear();
         File root = android.os.Environment.getExternalStorageDirectory();
@@ -120,15 +114,6 @@ public class RRReceiver extends Thread {
         }
     }
 
-    private static boolean checkWriteCapability() {
-        // TODO: add permission check here
-        if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-            BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Error: can't write to external storage").sendToTarget();
-            return false;
-        }
-        return true;
-    }
-
     private static void writeDataRemote(boolean cleaned) {
         ArrayList<Float> data = (cleaned ? cleanedRRValues : timeSequentialRRValues);
         if (data.isEmpty()) {
@@ -142,10 +127,10 @@ public class RRReceiver extends Thread {
             rrString.append(rr);
         }
         Calendar now = Calendar.getInstance();
-        String fileName = now.get(Calendar.MONTH) + "-" + now.get(Calendar.DAY_OF_MONTH) + "-" + now.get(Calendar.YEAR) + "-" +
+        String fileName = now.get(Calendar.MONTH)+1 + "-" + now.get(Calendar.DAY_OF_MONTH) + "-" + now.get(Calendar.YEAR) + "-" +
                 now.get(Calendar.HOUR_OF_DAY) + "-" + now.get(Calendar.MINUTE) + "-" + (cleaned ? "cleaned" : "raw") + ".txt";
         FirebaseStorage storage = FirebaseStorage.getInstance();
-        StorageReference storageReference = storage.getReference().child("RR-Values/" + fileName);
+        StorageReference storageReference = storage.getReference().child("RR-Values/" + UserData.getMonitorID(BreathingCoach.currentActivity) + "/" + fileName);
         FirebaseAuth auth = FirebaseAuth.getInstance();
         FirebaseUser user = auth.getCurrentUser();
         auth.signInAnonymously();
@@ -166,28 +151,25 @@ public class RRReceiver extends Thread {
     private static void cleanData() {
         int size = timeSequentialRRValues.size();
         cleanedRRValues = new ArrayList<>(timeSequentialRRValues);
-        if (size < DETECTION_WINDOW_SIZE+1 || size < CORRECTION_WINDOW_SIZE+1 || size < DRR_DETECTION_WINDOW_SIZE) {
+        if (size < CORRECTION_WINDOW_SIZE+1 || size < DETECTION_WINDOW_SIZE+1 || size < DRR_DETECTION_WINDOW_SIZE) {
             BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Data is too small to process for correction").sendToTarget();
             return;
         }
         for (int i=0; i<size; i++) {
             float rr = cleanedRRValues.get(i);
-            boolean clean = false;
             // All values must be in the range of a normal heart rate.
             boolean normal = rr >= 100 && rr <= 2000;
             if (!normal || !isValid(i) || (i > 0 && !isValidDRR(i))) {
                 ArrayList<Float> window = new ArrayList<>();
-                boolean searching = true;
                 int offset = 1;
-                while (window.size() < CORRECTION_WINDOW_SIZE && searching) {
-                    if (i-offset < 0 && i+offset > cleanedRRValues.size()-1) {
-                        searching = false;
+                while (window.size() < CORRECTION_WINDOW_SIZE) {
+                    if (i-offset < 0 && i+offset > size) {
                         break;
                     }
-                    if (i-offset > 0 && isValid(i-offset)) {
+                    if (i-offset >= 0 && isValid(i-offset)) {
                         window.add(cleanedRRValues.get(i-offset));
                     }
-                    if (i+offset < cleanedRRValues.size()-1 && isValid(i+offset)) {
+                    if (i+offset < size && isValid(i+offset)) {
                         window.add(cleanedRRValues.get(i+offset));
                     }
                     offset++;
@@ -323,7 +305,7 @@ public class RRReceiver extends Thread {
         return sum/data.size();
     }
 
-    private static class DisconnectorDetector extends TimerTask {
+    private static class DisconnecterDetector extends TimerTask {
         @Override
         public void run() {
             if (recording) {

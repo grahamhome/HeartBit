@@ -7,4 +7,7 @@
     <color name="colorPrimary">#0bb6ff</color>
     <color name="colorPrimaryDark">#138bff</color>
     <color name="colorAccent">#97ff00</color>
+    <color name="darkGrey">#7e7e7e</color>
+    <color name="lightGrey">#b7b7b7</color>
+    <color name="iconColor">#e91e63</color>
 </resources>
