@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
@@ -114,7 +115,7 @@ public class RRReceiver extends Thread {
         }
     }
 
-    private static void writeDataRemote(boolean cleaned) {
+    private static void writeDataRemote(final boolean cleaned) {
         ArrayList<Float> data = (cleaned ? cleanedRRValues : timeSequentialRRValues);
         if (data.isEmpty()) {
             return;
@@ -126,26 +127,37 @@ public class RRReceiver extends Thread {
             }
             rrString.append(rr);
         }
+        final String rrData = rrString.toString();
         Calendar now = Calendar.getInstance();
         String fileName = now.get(Calendar.MONTH)+1 + "-" + now.get(Calendar.DAY_OF_MONTH) + "-" + now.get(Calendar.YEAR) + "-" +
                 now.get(Calendar.HOUR_OF_DAY) + "-" + now.get(Calendar.MINUTE) + "-" + (cleaned ? "cleaned" : "raw") + ".txt";
         FirebaseStorage storage = FirebaseStorage.getInstance();
-        StorageReference storageReference = storage.getReference().child("RR-Values/" + UserData.getMonitorID(BreathingCoach.currentActivity) + "/" + fileName);
+        final StorageReference storageReference = storage.getReference().child("RR-Values/" + UserData.getMonitorID(BreathingCoach.currentActivity) + "/" + fileName);
         FirebaseAuth auth = FirebaseAuth.getInstance();
         FirebaseUser user = auth.getCurrentUser();
-        auth.signInAnonymously();
-        UploadTask uploadTask = storageReference.putBytes(rrString.toString().getBytes());
-        uploadTask.addOnFailureListener(new OnFailureListener() {
+        auth.signInAnonymously().addOnSuccessListener(new OnSuccessListener<AuthResult>() {
             @Override
-            public void onFailure(@NonNull Exception exception) {
-                BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, (exception.getCause())).sendToTarget();
+            public void onSuccess(AuthResult authResult) {
+                UploadTask uploadTask = storageReference.putBytes(rrData.getBytes());
+                uploadTask.addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, (exception.getCause())).sendToTarget();
+                    }
+                }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, ((cleaned ? "Processed" : "Original") + " file written to Firebase")).sendToTarget();
+                    }
+                });
             }
-        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+        }).addOnFailureListener(new OnFailureListener() {
             @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, ("File written to Firebase")).sendToTarget();
+            public void onFailure(@NonNull Exception e) {
+                BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, ("Firebase error")).sendToTarget();
             }
         });
+
     }
 
     private static void cleanData() {
