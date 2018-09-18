@@ -10,4 +10,6 @@
     <color name="darkGrey">#7e7e7e</color>
     <color name="lightGrey">#b7b7b7</color>
     <color name="iconColor">#e91e63</color>
+
+    <color name="black_overlay">#66000000</color>
 </resources>

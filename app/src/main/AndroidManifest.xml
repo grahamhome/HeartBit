@@ -15,14 +15,17 @@
         android:roundIcon="@drawable/ic_heartbeat_solid"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".BreathingCoach" android:screenOrientation="sensorPortrait">
+        <activity
+            android:name=".BreathingCoach"
+            android:screenOrientation="sensorPortrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".IntroActivity"/>
-        <activity android:name=".InfoActivity"/>
+        <activity android:name=".IntroActivity" />
+        <activity android:name=".InfoActivity" />
     </application>
 
 </manifest>

@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="20dp"
     tools:context=".BreathingCoach">
 
@@ -17,45 +18,61 @@
         android:text="@string/main_activity_title"
         android:layout_marginBottom="20dp"/>
 
-    <TextView
-        android:id="@+id/help_link"
-        android:layout_width="wrap_content"
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/progress_layout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="20dp"
-        android:layout_marginRight="10dp"
-        android:textSize="28sp"
-        android:textColor="@color/colorPrimaryDark"
-        android:textStyle="bold"
-        android:text="@string/help_link_text"/>
-
-    <com.home.graham.heartbit.ArcProgress
-        android:id="@+id/arc_progress"
-        android:layout_marginStart="60dp"
-        android:layout_below="@id/title"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:layout_marginTop="80dp"
-        android:layout_centerInParent="true"/>
-
-    <com.home.graham.heartbit.CircleProgress
-        android:id="@+id/circle_progress"
-        android:layout_below="@id/title"
         android:layout_marginStart="50dp"
-        android:layout_width="230dp"
-        android:layout_height="230dp"
-        android:layout_marginTop="112dp"
-        android:layout_centerInParent="true"/>
+        android:layout_marginEnd="50dp"
+        android:layout_marginTop="80dp"
+        android:layout_below="@id/title"
+        android:layout_centerInParent="true">
+
+        <com.home.graham.heartbit.ArcProgress
+            android:id="@+id/arc_progress"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintDimensionRatio="1:1"
+            android:layout_centerInParent="true"
+            />
+
+        <com.home.graham.heartbit.CircleProgress
+            android:id="@+id/circle_progress"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toTopOf="@id/arc_progress"
+            android:layout_marginTop="30dp"
+            android:layout_marginRight="30dp"
+            android:layout_marginLeft="30dp"
+            app:layout_constraintDimensionRatio="1:1"/>
+
+    </android.support.constraint.ConstraintLayout>
 
     <TextView
         android:id="@+id/session_timer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/circle_progress"
+        android:layout_below="@id/progress_layout"
         android:layout_marginTop="20dp"
         android:textAlignment="center"
         android:textSize="20sp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/session_timer"
+        android:layout_above="@id/toggle">
+
+        <TextView
+            android:id="@+id/breathing_guide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textAlignment="viewStart"
+            android:textSize="16sp"
+            android:text="@string/summary_instructions"/>
+
+    </ScrollView>
 
     <Button
         android:id="@+id/toggle"
@@ -67,6 +84,20 @@
         android:text="@string/start_btn_text"
         android:background="@drawable/button_inactive"
         android:enabled="false"/>
+
+    <Button
+        android:id="@+id/help_link"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_toEndOf="@id/toggle"
+        android:layout_above="@id/status_display"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@null"
+        android:textSize="38sp"
+        android:textColor="@color/colorPrimaryDark"
+        android:textStyle="bold"
+        android:text="@string/help_link_text"/>
 
     <TextView
         android:id="@+id/status_display"
