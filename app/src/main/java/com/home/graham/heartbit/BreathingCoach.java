@@ -19,6 +19,7 @@ import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -66,6 +67,9 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     private static int secondsElapsed = 0;
     private static Timer animationTimer;
 
+    private boolean helping = false;
+    private boolean warning = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +86,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
 
             // Set up UI
             setContentView(R.layout.activity_breathing_coach);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             (connectionDisplay = findViewById(R.id.status_display)).setText("Connecting");
             (breathProgress = findViewById(R.id.circle_progress)).setProgress(0);
             (sessionProgress = findViewById(R.id.arc_progress)).setProgress(0);
@@ -93,13 +98,27 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                     toggleRecording();
                 }
             });
-
             (helpLink = findViewById(R.id.help_link)).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    if (!RRReceiver.recording) {
-                        startActivity(new Intent(BreathingCoach.this, InfoActivity.class));
-                        finish();
+                    if (!helping) {
+                        helping = true;
+                        final AlertDialog.Builder builder = new AlertDialog.Builder(BreathingCoach.this);
+                        builder.setTitle(R.string.instructions_title);
+                        builder.setMessage(R.string.instructions);
+                        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                helping = false;
+                            }
+                        });
+                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialogInterface) {
+                                helping = false;
+                            }
+                        });
+                        builder.show();
                     }
                 }
             });
@@ -136,7 +155,6 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
                 breathProgress.setText(getString(R.string.breathe_in));
                 toggleButton.setText(getText(R.string.stop_btn_text));
-                helpLink.setTextColor(Color.GRAY);
                 secondsElapsed = 0;
                 (animationTimer = new Timer()).schedule(new TimerTask() {
                     long lastTickTime = 0;
@@ -180,7 +198,6 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     private void stopRecording() {
         RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
         animationTimer.cancel();
-        helpLink.setTextColor(getColor(R.color.colorPrimaryDark));
         sessionTimer.setTextColor(Color.BLACK);
         sessionTimer.setText("00:00");
         breathProgress.setProgress(0);
@@ -206,20 +223,29 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         connected = true;
                         break;
                     case Polar.COULD_NOT_CONNECT:
-                        AlertDialog.Builder builder = new AlertDialog.Builder(BreathingCoach.this);
-                        builder.setTitle(R.string.monitor_not_found_title);
-                        builder.setMessage(R.string.monitor_not_found_message);
-                        builder.setPositiveButton(android.R.string.ok, null);
-                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialog) {
-                                connectionDisplay.setText(R.string.connection_status_connecting);
-                                connectionDisplay.setTextColor(Color.BLACK);
-                                polarService.interrupt();
-                                (polarService = new Polar(bluetoothAdapter, getApplicationContext())).start();
-                            }
-                        });
-                        builder.show();
+                        if (!warning) {
+                            warning = true;
+                            AlertDialog.Builder builder = new AlertDialog.Builder(BreathingCoach.this);
+                            builder.setTitle(R.string.monitor_not_found_title);
+                            builder.setMessage(R.string.monitor_not_found_message);
+                            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    warning = false;
+                                }
+                            });
+                            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                @Override
+                                public void onDismiss(DialogInterface dialog) {
+                                    warning = false;
+                                    connectionDisplay.setText(R.string.connection_status_connecting);
+                                    connectionDisplay.setTextColor(Color.BLACK);
+                                    polarService.interrupt();
+                                    (polarService = new Polar(bluetoothAdapter, getApplicationContext())).start();
+                                }
+                            });
+                            builder.show();
+                        }
                         connectionDisplay.setText(R.string.connection_status_none);
                         connectionDisplay.setTextColor(Color.RED);
                         break;

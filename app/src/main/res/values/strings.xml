@@ -5,8 +5,8 @@
     <string name="intro_text">This application will coach you through a simple breathing routine. During this time, it will collect information about your heart rate from a Polar heart rate monitor. This data will be stored on our secure server for research purposes.\n\nBy using this app, you are helping us research the effect of heart rate variability (HRV) on overall health and wellness. Thank you for participating!\n\nWhen you are ready to begin, enter your first name in the field below and click \"Start\" to begin using the app.
     </string>
     <string name="instructions_title">Instructions</string>
-    <string name="instructions">To use this app, just follow these steps:\n\n1. Put on your Polar heart rate monitor and wait until the word \"Connected\" appears at the top of the screen.\n\n2. Press \"Start\" to begin your breathing session. Breathe in and out as instructed by the app. Please do not close the application or engage in other activities during the breathing session.\n\n3. After 5 minutes, you can stop the breathing session at any time by pressing the \"Stop\" button. You can stop the session before 5 minutes if you need to, but this will provide less useful data for our research.\n\n4. Wait until the app says that your data has been saved before closing the app.\n\nYou can review these instructions at any time by clicking the question mark on the main screen.
-    </string>
+    <string name="instructions">To use this app, just follow these steps:\n\n1. Put on your Polar heart rate monitor and wait until the word \"Connected\" appears at the top of the screen.\n\n2. Press \"Start\" to begin your breathing session. Breathe in and out as instructed by the app. Please do not close the application or engage in other activities during the breathing session.Match your breathing rate as closely as possible to the progress of the blue circle on the screen. The green bar will be full when the recommended 5-minute duration has been reached.\n\n3. After 5 minutes, you can stop the breathing session at any time by pressing the \"Stop\" button. You can stop the session before 5 minutes if you need to, but this will provide less useful data for our research.\n\n4. Wait until the app says that your data has been saved before closing the app.\n\nYou can review these instructions at any time by clicking the question mark on the main screen.</string>
+    <string name="summary_instructions">Breathe in through your nose while the word “inhale” is shown.\n\nBreathe out through pursed lips while the word \"exhale\" is shown.\n\nIf you become lightheaded, stop the session and try again later.</string>
     <string name="start_btn_text">Start</string>
     <string name="stop_btn_text">Stop</string>
     <string name="early_termination_warning_title">Are you sure?</string>
@@ -32,4 +32,8 @@
     <string name="breathe_in">inhale</string>
     <string name="breathe_out">exhale</string>
     <string name="help_link_text">\?</string>
+
+    <string name="title_activity_graph">GraphActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>
