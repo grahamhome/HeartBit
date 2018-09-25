@@ -47,4 +47,3 @@ public class GraphActivity extends AppCompatActivity {
         breathTimer.run();
     }
 }
-
