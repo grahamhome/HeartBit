@@ -18,14 +18,17 @@
         <activity
             android:name=".BreathingCoach"
             android:screenOrientation="sensorPortrait">
+        </activity>
+        <activity android:name=".IntroActivity" />
+        <activity android:name=".InfoActivity" />
+        <activity android:name=".GraphActivity"
+            android:screenOrientation="sensorLandscape" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".IntroActivity" />
-        <activity android:name=".InfoActivity" />
     </application>
 
 </manifest>
