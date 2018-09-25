@@ -1,5 +1,6 @@
 package com.home.graham.heartbit;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -29,8 +30,8 @@ public class CircleProgress extends View {
     private int unfinishedColor;
     private String text = "";
 
-    private final int default_finished_color = ContextCompat.getColor(BreathingCoach.currentActivity, R.color.colorFinishedCircle);
-    private final int default_unfinished_color = ContextCompat.getColor(BreathingCoach.currentActivity, R.color.colorUnfinishedCircle);
+    private int default_finished_color = 0;
+    private int default_unfinished_color = 0;
     private final int default_text_color = Color.WHITE;
     private final int default_max = BreathingCoach.singleBreathTimeMS;
     private final float default_text_size = 80;
@@ -47,17 +48,18 @@ public class CircleProgress extends View {
 
     private Paint paint = new Paint();
 
-    public CircleProgress(Context context) {
-        this(context, null);
+    public CircleProgress(Context context, Activity parentActivity) {
+        this(context, null, parentActivity);
     }
 
-    public CircleProgress(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
+    public CircleProgress(Context context, AttributeSet attrs, Activity parentActivity) {
+        this(context, attrs, 0, parentActivity);
     }
 
-    public CircleProgress(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CircleProgress(Context context, AttributeSet attrs, int defStyleAttr, Activity parentActivity) {
         super(context, attrs, defStyleAttr);
-
+        default_finished_color = ContextCompat.getColor(parentActivity, R.color.colorFinishedCircle);
+        default_unfinished_color = ContextCompat.getColor(parentActivity, R.color.colorUnfinishedCircle);
         final TypedArray attributes = context.getTheme().obtainStyledAttributes(attrs, R.styleable.CircleProgress, defStyleAttr, 0);
         initByAttributes(attributes);
         attributes.recycle();

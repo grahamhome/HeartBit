@@ -1,5 +1,6 @@
 package com.home.graham.heartbit;
 
+import android.app.Activity;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,9 +28,16 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static com.home.graham.heartbit.Polar.NEW_MEASUREMENT;
+
 public class RRReceiver extends Thread {
 
     public static Handler rrHandler;
+
+    // UI message handler
+    private static Handler uiMessageHandler;
+
+    private static Activity parentActivity;
 
     private static final int DETECTION_WINDOW_SIZE = 20;
     private static final int CORRECTION_WINDOW_SIZE = 2;
@@ -41,12 +49,17 @@ public class RRReceiver extends Thread {
     public static final int USER_MESSAGE = 8;
     public static final int DEVICE_ID_FOUND = 9;
 
-    private static ArrayList<Float> timeSequentialRRValues = new ArrayList<>();
+    public static ArrayList<Float> timeSequentialRRValues = new ArrayList<>();
     private static ArrayList<Float> cleanedRRValues;
 
     public static boolean recording = false;
 
     private static Timer timer = new Timer();
+
+    public RRReceiver(UIMessageHandlerOwnerActivity uiMessageHandlerOwner) {
+        uiMessageHandler = uiMessageHandlerOwner.getUIMessageHandler();
+        parentActivity = uiMessageHandlerOwner.getActivity();
+    }
 
     @Override
     public void run() {
@@ -62,14 +75,15 @@ public class RRReceiver extends Thread {
                         if (recording) {
                             (timer = new Timer()).schedule(new DisconnecterDetector(), 10000);
                         }
-                        BreathingCoach.uiMessageHandler.obtainMessage(Polar.CONNECTED).sendToTarget();
+                        uiMessageHandler.obtainMessage(Polar.CONNECTED).sendToTarget();
                         break;
-                    case Polar.NEW_MEASUREMENT:
+                    case NEW_MEASUREMENT:
                         if (recording) {
                             timer.cancel();
                             timer.purge();
                             (timer = new Timer()).schedule(new DisconnecterDetector(), 10000);
                             timeSequentialRRValues.add(((Polar.PolarTask) inputMessage.obj).rr);
+                            uiMessageHandler.obtainMessage(NEW_MEASUREMENT, inputMessage.obj).sendToTarget();
                         }
                         break;
                     case BreathingCoach.TOGGLE_RECORDING:
@@ -89,7 +103,7 @@ public class RRReceiver extends Thread {
                         }
                         break;
                     case DEVICE_ID_FOUND:
-                        UserData.setMonitorID(inputMessage.obj.toString(), BreathingCoach.currentActivity);
+                        UserData.setMonitorID(inputMessage.obj.toString(), parentActivity);
                         break;
                 }
             }
@@ -111,7 +125,7 @@ public class RRReceiver extends Thread {
             bufferedReader.close();
             inputReader.close();
         } catch (IOException x) {
-            BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Error: failed to read from external storage").sendToTarget();
+            uiMessageHandler.obtainMessage(USER_MESSAGE, "Error: failed to read from external storage").sendToTarget();
         }
     }
 
@@ -132,7 +146,7 @@ public class RRReceiver extends Thread {
         String fileName = now.get(Calendar.MONTH)+1 + "-" + now.get(Calendar.DAY_OF_MONTH) + "-" + now.get(Calendar.YEAR) + "-" +
                 now.get(Calendar.HOUR_OF_DAY) + "-" + now.get(Calendar.MINUTE) + "-" + (cleaned ? "cleaned" : "raw") + ".txt";
         FirebaseStorage storage = FirebaseStorage.getInstance();
-        final StorageReference storageReference = storage.getReference().child("RR-Values/" + UserData.getMonitorID(BreathingCoach.currentActivity) + "/" + fileName);
+        final StorageReference storageReference = storage.getReference().child("RR-Values/" + UserData.getMonitorID(parentActivity) + "/" + fileName);
         FirebaseAuth auth = FirebaseAuth.getInstance();
         FirebaseUser user = auth.getCurrentUser();
         auth.signInAnonymously().addOnSuccessListener(new OnSuccessListener<AuthResult>() {
@@ -142,19 +156,19 @@ public class RRReceiver extends Thread {
                 uploadTask.addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception exception) {
-                        BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, (exception.getCause())).sendToTarget();
+                        uiMessageHandler.obtainMessage(USER_MESSAGE, (exception.getCause())).sendToTarget();
                     }
                 }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, ((cleaned ? "Processed" : "Original") + " file written to Firebase")).sendToTarget();
+                        uiMessageHandler.obtainMessage(USER_MESSAGE, ((cleaned ? "Processed" : "Original") + " file written to Firebase")).sendToTarget();
                     }
                 });
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, ("Firebase error")).sendToTarget();
+                uiMessageHandler.obtainMessage(USER_MESSAGE, ("Firebase error")).sendToTarget();
             }
         });
 
@@ -164,7 +178,7 @@ public class RRReceiver extends Thread {
         int size = timeSequentialRRValues.size();
         cleanedRRValues = new ArrayList<>(timeSequentialRRValues);
         if (size < CORRECTION_WINDOW_SIZE+1 || size < DETECTION_WINDOW_SIZE+1 || size < DRR_DETECTION_WINDOW_SIZE) {
-            BreathingCoach.uiMessageHandler.obtainMessage(USER_MESSAGE, "Data is too small to process for correction").sendToTarget();
+            uiMessageHandler.obtainMessage(USER_MESSAGE, "Data is too small to process for correction").sendToTarget();
             return;
         }
         for (int i=0; i<size; i++) {
@@ -321,7 +335,7 @@ public class RRReceiver extends Thread {
         @Override
         public void run() {
             if (recording) {
-                BreathingCoach.uiMessageHandler.obtainMessage(Polar.TIMEOUT).sendToTarget();
+                uiMessageHandler.obtainMessage(Polar.TIMEOUT).sendToTarget();
             }
         }
     };

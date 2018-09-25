@@ -1,5 +1,6 @@
 package com.home.graham.heartbit;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -39,8 +40,8 @@ public class ArcProgress extends View {
 
     private float arcBottomHeight;
 
-    private final int default_finished_color = ContextCompat.getColor(BreathingCoach.currentActivity, R.color.colorFinishedArc);
-    private final int default_unfinished_color = ContextCompat.getColor(BreathingCoach.currentActivity, R.color.colorUnfinishedArc);
+    private int default_finished_color = 0;
+    private int default_unfinished_color = 0;
     private final int default_text_color = Color.rgb(66, 145, 241);
     private final float default_suffix_text_size = 15;
     private final float default_suffix_padding = 4;
@@ -67,12 +68,14 @@ public class ArcProgress extends View {
     private static final String INSTANCE_ARC_ANGLE = "arc_angle";
     private static final String INSTANCE_SUFFIX = "suffix";
 
-    public ArcProgress(Context context) {
-        this(context, null);
+    public ArcProgress(Context context, Activity parentActivity) {
+        this(context, null, parentActivity);
     }
 
-    public ArcProgress(Context context, AttributeSet attrs) {
+    public ArcProgress(Context context, AttributeSet attrs, Activity parentActivity) {
         this(context, attrs, 0);
+        default_finished_color = ContextCompat.getColor(parentActivity, R.color.colorFinishedArc);
+        default_unfinished_color = ContextCompat.getColor(parentActivity, R.color.colorUnfinishedArc);
     }
 
     public ArcProgress(Context context, AttributeSet attrs, int defStyleAttr) {

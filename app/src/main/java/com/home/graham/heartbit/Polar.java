@@ -28,9 +28,13 @@ public class Polar extends Thread {
     // Factor to convert RR values to milliseconds
     private static final float RR_CONVERSION_FACTOR = 1024/1000;
 
-    public Polar(BluetoothAdapter adapter, Context context) {
+    // UI message handler
+    private Handler uiMessageHandler;
+
+    public Polar(BluetoothAdapter adapter, Context context, UIMessageHandlerOwnerActivity uiMessageHandlerOwner) {
         this.context = context;
         bluetoothAdapter = adapter;
+        this.uiMessageHandler = uiMessageHandlerOwner.getUIMessageHandler();
     }
 
     @Override
@@ -158,7 +162,7 @@ public class Polar extends Thread {
                         RRReceiver.rrHandler.obtainMessage(DEVICE_ID_FOUND, deviceId).sendToTarget();
                         connected = true;
                         scanLeDevice(false);
-                        BreathingCoach.uiMessageHandler.obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
+                        uiMessageHandler.obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
                         } else {
@@ -183,7 +187,7 @@ public class Polar extends Thread {
                 gatt.discoverServices();
             } else if(newState == BluetoothGatt.STATE_DISCONNECTED){
                 connected = false;
-                BreathingCoach.uiMessageHandler.obtainMessage(TIMEOUT).sendToTarget();
+                uiMessageHandler.obtainMessage(TIMEOUT).sendToTarget();
                 scanLeDevice(true);
             }
         }
@@ -283,7 +287,7 @@ public class Polar extends Thread {
                     if (!connected) {
                         mScanning = false;
                         bluetoothAdapter.stopLeScan(leScanCallback);
-                        BreathingCoach.uiMessageHandler.obtainMessage(COULD_NOT_CONNECT).sendToTarget();
+                        uiMessageHandler.obtainMessage(COULD_NOT_CONNECT).sendToTarget();
                     }
                 }
             }, SCAN_PERIOD);

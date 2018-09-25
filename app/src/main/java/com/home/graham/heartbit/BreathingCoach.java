@@ -26,10 +26,10 @@ import android.widget.Toast;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class BreathingCoach extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
+public class BreathingCoach extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback, UIMessageHandlerOwnerActivity {
 
     // Thread messaging codes
-    private final static int REQUEST_ENABLE_BT = 1;
+    protected final static int REQUEST_ENABLE_BT = 1;
     private final static int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     public final static int TOGGLE_RECORDING = 5;
     public final static int SESSION_TIMER_TICK = 10;
@@ -54,9 +54,6 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     private static RRReceiver receiverService;
     public static Handler uiMessageHandler;
 
-    // Activity variables
-    public static Activity currentActivity;
-
     // Permission variables
     private static boolean location_permission_needed = false;
 
@@ -73,7 +70,6 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        currentActivity = this;
 
         // Check if intro/info activities need to be viewed
         if (!UserData.getIntroViewed(BreathingCoach.this)) {
@@ -241,7 +237,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                                     connectionDisplay.setText(R.string.connection_status_connecting);
                                     connectionDisplay.setTextColor(Color.BLACK);
                                     polarService.interrupt();
-                                    (polarService = new Polar(bluetoothAdapter, getApplicationContext())).start();
+                                    (polarService = new Polar(bluetoothAdapter, getApplicationContext(), BreathingCoach.this)).start();
                                 }
                             });
                             builder.show();
@@ -297,8 +293,8 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             Intent enableBluetoothIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BT);
         }
-        (receiverService = new RRReceiver()).start();
-        polarService = new Polar(bluetoothAdapter, getApplicationContext());
+        (receiverService = new RRReceiver(BreathingCoach.this)).start();
+        polarService = new Polar(bluetoothAdapter, getApplicationContext(), BreathingCoach.this);
         polarService.start();
     }
 
@@ -326,5 +322,13 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 }
                 break;
         }
+    }
+
+    public Handler getUIMessageHandler() {
+        return uiMessageHandler;
+    }
+
+    public Activity getActivity() {
+        return BreathingCoach.this;
     }
 }
