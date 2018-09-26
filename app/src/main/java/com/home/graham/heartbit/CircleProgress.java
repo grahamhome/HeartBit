@@ -48,18 +48,18 @@ public class CircleProgress extends View {
 
     private Paint paint = new Paint();
 
-    public CircleProgress(Context context, Activity parentActivity) {
-        this(context, null, parentActivity);
+    public CircleProgress(Context context) {
+        this(context, null);
     }
 
-    public CircleProgress(Context context, AttributeSet attrs, Activity parentActivity) {
-        this(context, attrs, 0, parentActivity);
+    public CircleProgress(Context context, AttributeSet attrs) {
+        this(context, attrs, 0);
     }
 
-    public CircleProgress(Context context, AttributeSet attrs, int defStyleAttr, Activity parentActivity) {
+    public CircleProgress(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        default_finished_color = ContextCompat.getColor(parentActivity, R.color.colorFinishedCircle);
-        default_unfinished_color = ContextCompat.getColor(parentActivity, R.color.colorUnfinishedCircle);
+        default_finished_color = context.getColor(R.color.colorFinishedCircle);
+        default_unfinished_color = context.getColor(R.color.colorUnfinishedCircle);
         final TypedArray attributes = context.getTheme().obtainStyledAttributes(attrs, R.styleable.CircleProgress, defStyleAttr, 0);
         initByAttributes(attributes);
         attributes.recycle();

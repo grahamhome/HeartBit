@@ -21,13 +21,16 @@
         </activity>
         <activity android:name=".IntroActivity" />
         <activity android:name=".InfoActivity" />
-        <activity android:name=".GraphActivity"
-            android:screenOrientation="sensorLandscape" >
+        <activity
+            android:name=".GraphActivity"
+            android:screenOrientation="sensorLandscape"></activity>
+        <activity android:name=".PickerActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

@@ -32,6 +32,9 @@
     <string name="breathe_in">inhale</string>
     <string name="breathe_out">exhale</string>
     <string name="help_link_text">\?</string>
+    <string name="activity_picker_title">Select Activity</string>
+    <string name="participant_activity_name">Participant Activity</string>
+    <string name="researcher_activity_name">Researcher Activity</string>
 
     <string name="title_activity_graph">GraphActivity</string>
     <string name="dummy_button">Dummy Button</string>

@@ -2,6 +2,7 @@ package com.home.graham.heartbit;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -68,18 +69,18 @@ public class ArcProgress extends View {
     private static final String INSTANCE_ARC_ANGLE = "arc_angle";
     private static final String INSTANCE_SUFFIX = "suffix";
 
-    public ArcProgress(Context context, Activity parentActivity) {
-        this(context, null, parentActivity);
+    public ArcProgress(Context context) {
+        this(context, null);
     }
 
-    public ArcProgress(Context context, AttributeSet attrs, Activity parentActivity) {
+    public ArcProgress(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
-        default_finished_color = ContextCompat.getColor(parentActivity, R.color.colorFinishedArc);
-        default_unfinished_color = ContextCompat.getColor(parentActivity, R.color.colorUnfinishedArc);
     }
 
     public ArcProgress(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        default_finished_color = context.getColor(R.color.colorFinishedArc);
+        default_unfinished_color = context.getColor(R.color.colorUnfinishedArc);
 
         TypedArray attributes = context.getTheme().obtainStyledAttributes(attrs, R.styleable.ArcProgress, defStyleAttr, 0);
         initByAttributes(attributes);
