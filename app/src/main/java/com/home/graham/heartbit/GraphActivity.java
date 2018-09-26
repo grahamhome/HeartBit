@@ -19,7 +19,10 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.GridLabelRenderer;
+import com.jjoe64.graphview.LegendRenderer;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -62,6 +65,24 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
         setContentView(R.layout.activity_graph);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         handler = new Handler(Looper.getMainLooper());
+        graph = findViewById(R.id.graph);
+        graph.getGridLabelRenderer().setHorizontalAxisTitle("Session Duration (Seconds)");
+        graph.getGridLabelRenderer().setVerticalAxisTitle("Heart Rate (BPM)");
+        graph.getGridLabelRenderer().setLabelFormatter( new DefaultLabelFormatter() {
+            @Override
+            public String formatLabel(double value, boolean isValueX) {
+                if (isValueX) {
+                    if (value % 1000 == 0) {
+                        return String.valueOf((int)(value/1000));
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return super.formatLabel(value, isValueX);
+                }
+            }
+        });
+
         setUpGraph();
         (toggleButton = findViewById(R.id.toggle)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -74,7 +95,15 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
     }
 
     private void setUpGraph() {
-        graph = findViewById(R.id.graph);
+        graph.removeSeries(breathSeries);
+        breathSeries = new LineGraphSeries<>();
+        breathSeries.setTitle("Breathing Rate");
+        graph.addSeries(breathSeries);
+        graph.removeSeries(hrSeries);
+        hrSeries = new LineGraphSeries<>();
+        hrSeries.setTitle("Heart Rate");
+        hrSeries.setColor(Color.RED);
+        graph.addSeries(hrSeries);
         graph.getViewport().setYAxisBoundsManual(true);
         graph.getViewport().setMinY(50);
         graph.getViewport().setMaxY(100);
@@ -84,35 +113,23 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
         graph.getViewport().setScalable(true);
         graph.getViewport().setScalableY(false);
         graph.getViewport().setScrollableY(true);
+        graph.getLegendRenderer().setVisible(true);
+        graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.BOTTOM);
     }
 
-    private void toggleBreathTimer(boolean on) {
-        if (on) {
-            graph.removeSeries(breathSeries);
-            breathSeries = new LineGraphSeries<>();
-            graph.addSeries(breathSeries);
-            (breathTimer = new Runnable() {
+    private void enableBreathTimer() {
+        (breathTimer = new Runnable() {
 
-                @Override
-                public void run() {
-                    if (RRReceiver.recording) {
-                        double yVal = ((Math.sin(((2 * Math.PI / (frequency)) * currentXPos) + (Math.PI / -2)) + 1) * 25) + 50;
-                        breathSeries.appendData(new DataPoint(currentXPos*updateRateMS, yVal), (currentXPos*updateRateMS > singleBreathTimeMS*10), 1000000);
-                        currentXPos++;
-                        handler.postDelayed(this, updateRateMS);
-                    }
+            @Override
+            public void run() {
+                if (RRReceiver.recording) {
+                    double yVal = ((Math.sin(((2 * Math.PI / (frequency)) * currentXPos) + (Math.PI / -2)) + 1) * 15) + 60;
+                    breathSeries.appendData(new DataPoint(currentXPos*updateRateMS, yVal), (currentXPos*updateRateMS > singleBreathTimeMS*10), 1000000);
+                    currentXPos++;
+                    handler.postDelayed(this, updateRateMS);
                 }
-            }).run();
-        }
-    }
-
-    private void toggleHRDisplay(boolean on) {
-        if (on) {
-            graph.removeSeries(hrSeries);
-            hrSeries = new LineGraphSeries<>();
-            hrSeries.setColor(Color.RED);
-            graph.addSeries(hrSeries);
-        }
+            }
+        }).run();
     }
 
     private void connect() {
@@ -137,18 +154,11 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
                 RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
                 toggleButton.setText(getText(R.string.stop_btn_text));
                 currentXPos = 0;
-                graph.removeSeries(breathSeries);
-                breathSeries = new LineGraphSeries<>();
-                graph.addSeries(breathSeries);
-                graph.getViewport().setMinX(0);
-                graph.getViewport().setMaxX(singleBreathTimeMS*10);
-                toggleHRDisplay(true);
+                setUpGraph();
             }
         } else {
             RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
             toggleButton.setText(getText(R.string.start_btn_text));
-            toggleBreathTimer(false);
-            toggleHRDisplay(false);
         }
     }
 
@@ -170,7 +180,7 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
                                                 ((float) 60000) / avg),
                                         false, 1000000);
                                 if (currentXPos == 0) {
-                                    toggleBreathTimer(true);
+                                    enableBreathTimer();
                                 }
                             }
                         }
