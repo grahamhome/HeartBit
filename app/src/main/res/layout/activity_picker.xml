@@ -11,21 +11,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
-        android:text="@string/activity_picker_title"/>
+        android:textAlignment="center"
+        android:text="@string/activity_picker_title"
+        android:textSize="20sp" />
 
     <Button
-    android:id="@+id/participant_activity_button"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginBottom="20dp"
-    android:text="@string/participant_activity_name"/>
+        android:id="@+id/participant_activity_button"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:text="@string/participant_activity_name"
+        android:background="@drawable/button" />
 
     <Button
         android:id="@+id/researcher_activity_button"
-        android:layout_width="wrap_content"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
-        android:text="@string/researcher_activity_name"/>
+        android:text="@string/researcher_activity_name"
+        android:textColor="@android:color/white"
+        android:background="@drawable/button_2" />
 
 
 </LinearLayout>

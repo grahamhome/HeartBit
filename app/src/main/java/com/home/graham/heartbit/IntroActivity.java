@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.Toast;
 
 public class IntroActivity extends AppCompatActivity {
 
@@ -27,7 +28,10 @@ public class IntroActivity extends AppCompatActivity {
                 } else {
                     UserData.setName(name, IntroActivity.this);
                     UserData.setIntroViewed(true, IntroActivity.this);
-                    startActivity(new Intent(IntroActivity.this, BreathingCoach.class));
+                    if (name.equals(getString(R.string.researcher_name))) {
+                        Toast.makeText(getApplicationContext(), getString(R.string.researcher_mode_unlock_message), Toast.LENGTH_SHORT).show();
+                    }
+                    startActivity(new Intent(IntroActivity.this, PickerActivity.class));
                 }
             }
         });

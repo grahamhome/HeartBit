@@ -30,7 +30,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
 
     // Thread messaging codes
     protected final static int REQUEST_ENABLE_BT = 1;
-    private final static int PERMISSION_REQUEST_COARSE_LOCATION = 1;
+    protected final static int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     public final static int TOGGLE_RECORDING = 5;
     public final static int SESSION_TIMER_TICK = 10;
     public final static int CHRONOMETER_TICK = 11;
@@ -52,7 +52,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     private static BluetoothManager bluetoothManager;
     private static Polar polarService;
     private static RRReceiver receiverService;
-    public static Handler uiMessageHandler;
+    private static Handler uiMessageHandler;
 
     // Permission variables
     private static boolean location_permission_needed = false;
@@ -60,88 +60,79 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     // Timer variables TODO: Make a timer class
     private static int timerTickMS = 25;
     public static int singleBreathTimeMS = 5000;
-    public static int sessionTotalTimeMS = 300000;
+    public static int sessionTotalTimeMS = 180000;
     private static int secondsElapsed = 0;
     private static Timer animationTimer;
 
     private boolean helping = false;
     private boolean warning = false;
+    private boolean requesting = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Set up UI
+        setContentView(R.layout.activity_breathing_coach);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        (connectionDisplay = findViewById(R.id.status_display)).setText("Connecting");
+        (breathProgress = findViewById(R.id.circle_progress)).setProgress(0);
+        (sessionProgress = findViewById(R.id.arc_progress)).setProgress(0);
+        (sessionTimer = findViewById(R.id.session_timer)).setText("00:00");
 
-        // Check if intro/info activities need to be viewed
-        if (!UserData.getIntroViewed(BreathingCoach.this)) {
-            startActivity(new Intent(BreathingCoach.this, IntroActivity.class));
-            finish();
-        } else if (!UserData.getInstructionsViewed(BreathingCoach.this)) {
-            startActivity(new Intent(BreathingCoach.this, InfoActivity.class));
-            finish();
-        } else {
-
-            // Set up UI
-            setContentView(R.layout.activity_breathing_coach);
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            (connectionDisplay = findViewById(R.id.status_display)).setText("Connecting");
-            (breathProgress = findViewById(R.id.circle_progress)).setProgress(0);
-            (sessionProgress = findViewById(R.id.arc_progress)).setProgress(0);
-            (sessionTimer = findViewById(R.id.session_timer)).setText("00:00");
-
-            (toggleButton = findViewById(R.id.toggle)).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    toggleRecording();
-                }
-            });
-            (helpLink = findViewById(R.id.help_link)).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (!helping) {
-                        helping = true;
-                        final AlertDialog.Builder builder = new AlertDialog.Builder(BreathingCoach.this);
-                        builder.setTitle(R.string.instructions_title);
-                        builder.setMessage(R.string.instructions);
-                        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                helping = false;
-                            }
-                        });
-                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialogInterface) {
-                                helping = false;
-                            }
-                        });
-                        builder.show();
-                    }
-                }
-            });
-
-            // Check for permissions
-            location_permission_needed = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) &&
-                    (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED));
-
-            // Request permissions
-            if (location_permission_needed) {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(R.string.permission_request_explanation_title);
-                builder.setMessage(R.string.permission_request_explanation);
-                builder.setPositiveButton(android.R.string.ok, null);
-                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialog) {
-                        if (location_permission_needed) {
-                            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
-                        }
-                    }
-                });
-                builder.show();
-            } else {
-                setUpMessageHandler();
-                connect();
+        (toggleButton = findViewById(R.id.toggle)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                toggleRecording();
             }
+        });
+        (helpLink = findViewById(R.id.help_link)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!helping) {
+                    helping = true;
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(BreathingCoach.this);
+                    builder.setTitle(R.string.instructions_title);
+                    builder.setMessage(R.string.instructions);
+                    builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            helping = false;
+                        }
+                    });
+                    builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                        @Override
+                        public void onDismiss(DialogInterface dialogInterface) {
+                            helping = false;
+                        }
+                    });
+                    builder.show();
+                }
+            }
+        });
+
+        // Check for permissions
+        location_permission_needed = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) &&
+                (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED));
+
+        // Request permissions
+        if (location_permission_needed) {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.permission_request_explanation_title);
+            builder.setMessage(R.string.permission_request_explanation);
+            builder.setPositiveButton(android.R.string.ok, null);
+            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    if (location_permission_needed) {
+                        requesting = true;
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
+                    }
+                }
+            });
+            builder.show();
+        } else {
+            setUpMessageHandler();
+            connect();
         }
     }
 
@@ -246,8 +237,8 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         connectionDisplay.setTextColor(Color.RED);
                         break;
                     case Polar.TIMEOUT:
-                        Toast.makeText(getApplicationContext(), "Make sure Polar is secure", Toast.LENGTH_SHORT).show();
-                        connectionDisplay.setText("Waiting for data");
+                        Toast.makeText(getApplicationContext(), getString(R.string.timeout_warning), Toast.LENGTH_SHORT).show();
+                        connectionDisplay.setText(R.string.connection_status_waiting);
                         connectionDisplay.setTextColor(Color.BLACK);
                         break;
                     case RRReceiver.USER_MESSAGE:
@@ -300,6 +291,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int grantResults[]) {
+        requesting = false;
         switch (requestCode) {
             case PERMISSION_REQUEST_COARSE_LOCATION:
                 if (grantResults.length > 0) {
@@ -314,7 +306,10 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
                             @Override
                             public void onDismiss(DialogInterface dialog) {
-                                System.exit(0);
+                                Intent intent = new Intent(Intent.ACTION_MAIN);
+                                intent.addCategory(Intent.CATEGORY_HOME);
+                                startActivity(intent);
+                                finish();
                             }
                         });
                         builder.show();
@@ -330,5 +325,19 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
 
     public Activity getActivity() {
         return BreathingCoach.this;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (!requesting) {
+            if (RRReceiver.recording) {
+                toggleRecording();
+            }
+            uiMessageHandler = new Handler(Looper.getMainLooper());
+            polarService.interrupt();
+            receiverService.interrupt();
+            finish();
+        }
     }
 }

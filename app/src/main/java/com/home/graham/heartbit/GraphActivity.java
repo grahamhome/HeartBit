@@ -1,5 +1,6 @@
 package com.home.graham.heartbit;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -9,9 +10,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -26,10 +29,11 @@ import com.jjoe64.graphview.LegendRenderer;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import static com.home.graham.heartbit.BreathingCoach.PERMISSION_REQUEST_COARSE_LOCATION;
 import static com.home.graham.heartbit.BreathingCoach.REQUEST_ENABLE_BT;
 import static com.home.graham.heartbit.BreathingCoach.TOGGLE_RECORDING;
 
-public class GraphActivity extends AppCompatActivity implements UIMessageHandlerOwnerActivity {
+public class GraphActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback, UIMessageHandlerOwnerActivity {
 
     private static Handler handler;
 
@@ -41,12 +45,15 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
     private static LineGraphSeries<DataPoint> breathSeries = new LineGraphSeries<>();
     private static LineGraphSeries<DataPoint> hrSeries = new LineGraphSeries<>();
 
+    // Permission variables
+    private static boolean location_permission_needed = false;
+
     // Polar connection variables
     public static BluetoothAdapter bluetoothAdapter;
     private static BluetoothManager bluetoothManager;
     private static Polar polarService;
     private static RRReceiver receiverService;
-    public static Handler uiMessageHandler;
+    private static Handler uiMessageHandler;
 
     // Breath plot variables
     private static Runnable breathTimer;
@@ -58,6 +65,7 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
     private static boolean connected = false;
     private boolean warning = false;
     private int currentXPos = 0;
+    private boolean requesting = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,8 +98,32 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
                 toggleRecording();
             }
         });
-        setUpMessageHandler();
-        connect();
+
+        // Check for permissions
+        location_permission_needed = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) &&
+                (this.checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED));
+
+        // Request permissions
+        if (location_permission_needed) {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.permission_request_explanation_title);
+            builder.setMessage(R.string.permission_request_explanation);
+            builder.setPositiveButton(android.R.string.ok, null);
+            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    if (location_permission_needed) {
+                        requesting = true;
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
+                    }
+                }
+            });
+            builder.show();
+        } else {
+            setUpMessageHandler();
+            connect();
+        }
+
     }
 
     private void setUpGraph() {
@@ -232,5 +264,49 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
 
     public Activity getActivity() {
         return GraphActivity.this;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (!requesting) {
+            if (RRReceiver.recording) {
+                toggleRecording();
+            }
+            uiMessageHandler = new Handler(Looper.getMainLooper());
+            polarService.interrupt();
+            receiverService.interrupt();
+            finish();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int grantResults[]) {
+        requesting = false;
+        switch (requestCode) {
+            case PERMISSION_REQUEST_COARSE_LOCATION:
+                if (grantResults.length > 0) {
+                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        setUpMessageHandler();
+                        connect();
+                    } else {
+                        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        builder.setTitle(R.string.permission_denied_title);
+                        builder.setMessage(R.string.permission_denied_message);
+                        builder.setPositiveButton(android.R.string.ok, null);
+                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialog) {
+                                Intent intent = new Intent(Intent.ACTION_MAIN);
+                                intent.addCategory(Intent.CATEGORY_HOME);
+                                startActivity(intent);
+                                finish();
+                            }
+                        });
+                        builder.show();
+                    }
+                }
+                break;
+        }
     }
 }

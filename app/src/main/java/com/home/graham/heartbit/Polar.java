@@ -29,12 +29,12 @@ public class Polar extends Thread {
     private static final float RR_CONVERSION_FACTOR = 1024/1000;
 
     // UI message handler
-    private Handler uiMessageHandler;
+    private UIMessageHandlerOwnerActivity parentActivity;
 
     public Polar(BluetoothAdapter adapter, Context context, UIMessageHandlerOwnerActivity uiMessageHandlerOwner) {
         this.context = context;
         bluetoothAdapter = adapter;
-        this.uiMessageHandler = uiMessageHandlerOwner.getUIMessageHandler();
+        parentActivity = uiMessageHandlerOwner;
     }
 
     @Override
@@ -162,7 +162,7 @@ public class Polar extends Thread {
                         RRReceiver.rrHandler.obtainMessage(DEVICE_ID_FOUND, deviceId).sendToTarget();
                         connected = true;
                         scanLeDevice(false);
-                        uiMessageHandler.obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
+                        parentActivity.getUIMessageHandler().obtainMessage(CONNECTED, new PolarTask(0)).sendToTarget();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
                         } else {
@@ -187,7 +187,7 @@ public class Polar extends Thread {
                 gatt.discoverServices();
             } else if(newState == BluetoothGatt.STATE_DISCONNECTED){
                 connected = false;
-                uiMessageHandler.obtainMessage(TIMEOUT).sendToTarget();
+                parentActivity.getUIMessageHandler().obtainMessage(TIMEOUT).sendToTarget();
                 scanLeDevice(true);
             }
         }
@@ -287,7 +287,7 @@ public class Polar extends Thread {
                     if (!connected) {
                         mScanning = false;
                         bluetoothAdapter.stopLeScan(leScanCallback);
-                        uiMessageHandler.obtainMessage(COULD_NOT_CONNECT).sendToTarget();
+                        parentActivity.getUIMessageHandler().obtainMessage(COULD_NOT_CONNECT).sendToTarget();
                     }
                 }
             }, SCAN_PERIOD);

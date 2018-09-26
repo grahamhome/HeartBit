@@ -16,7 +16,7 @@ public class InfoActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 UserData.setIntructionsViewed(true, InfoActivity.this);
-                startActivity(new Intent(InfoActivity.this, BreathingCoach.class));
+                startActivity(new Intent(InfoActivity.this, PickerActivity.class));
             }
         });
     }
