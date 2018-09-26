@@ -94,12 +94,11 @@ public class RRReceiver extends Thread {
                             timeSequentialRRValues.clear();
                             (timer = new Timer()).schedule(new DisconnecterDetector(), 10000);
                         } else {
-                            // testing only
-                            //importData();
-                            // end testing
+                            /*
                             writeDataRemote(false);
                             cleanData();
                             writeDataRemote(true);
+                            */
                         }
                         break;
                     case DEVICE_ID_FOUND:

@@ -30,7 +30,7 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
 
     private static Handler handler;
 
-    private static int avgWindowSize = 5;
+    private static int avgWindowSize = 2;
 
     // UI elements
     private static Button toggleButton;
@@ -53,7 +53,6 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
 
     // Session variables
     private static boolean connected = false;
-    private static long recordingStartTime = 0;
     private boolean warning = false;
     private int currentXPos = 0;
 
@@ -77,13 +76,14 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
     private void setUpGraph() {
         graph = findViewById(R.id.graph);
         graph.getViewport().setYAxisBoundsManual(true);
-        graph.getViewport().setMinY(500);
-        graph.getViewport().setMaxY(1000);
+        graph.getViewport().setMinY(50);
+        graph.getViewport().setMaxY(100);
         graph.getViewport().setXAxisBoundsManual(true);
         graph.getViewport().setMinX(0);
-        graph.getViewport().setMaxX(frequency*5);
-        graph.getViewport().setScrollable(true);
+        graph.getViewport().setMaxX(singleBreathTimeMS*10);
         graph.getViewport().setScalable(true);
+        graph.getViewport().setScalableY(false);
+        graph.getViewport().setScrollableY(true);
     }
 
     private void toggleBreathTimer(boolean on) {
@@ -96,8 +96,8 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
                 @Override
                 public void run() {
                     if (RRReceiver.recording) {
-                        double yVal = ((Math.sin(((2 * Math.PI / (frequency)) * currentXPos) + (Math.PI / -2)) + 1) * 250) + 500;
-                        breathSeries.appendData(new DataPoint(currentXPos, yVal), (currentXPos > frequency*5), 100000);
+                        double yVal = ((Math.sin(((2 * Math.PI / (frequency)) * currentXPos) + (Math.PI / -2)) + 1) * 25) + 50;
+                        breathSeries.appendData(new DataPoint(currentXPos*updateRateMS, yVal), (currentXPos*updateRateMS > singleBreathTimeMS*10), 1000000);
                         currentXPos++;
                         handler.postDelayed(this, updateRateMS);
                     }
@@ -109,7 +109,6 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
     private void toggleHRDisplay(boolean on) {
         if (on) {
             graph.removeSeries(hrSeries);
-            recordingStartTime = 0;
             hrSeries = new LineGraphSeries<>();
             hrSeries.setColor(Color.RED);
             graph.addSeries(hrSeries);
@@ -138,6 +137,11 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
                 RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
                 toggleButton.setText(getText(R.string.stop_btn_text));
                 currentXPos = 0;
+                graph.removeSeries(breathSeries);
+                breathSeries = new LineGraphSeries<>();
+                graph.addSeries(breathSeries);
+                graph.getViewport().setMinX(0);
+                graph.getViewport().setMaxX(singleBreathTimeMS*10);
                 toggleHRDisplay(true);
             }
         } else {
@@ -150,7 +154,6 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
 
     private void setUpMessageHandler() {
         uiMessageHandler = new Handler(Looper.getMainLooper()) {
-            boolean flipped = false;
             @Override
             public void handleMessage(Message inputMessage) {
                 switch (inputMessage.what) {
@@ -159,12 +162,12 @@ public class GraphActivity extends AppCompatActivity implements UIMessageHandler
                             int numSamples = RRReceiver.timeSequentialRRValues.size();
                             if (numSamples >= avgWindowSize) {
                                 float total = 0;
-                                for (int i = numSamples; i > 0; i--) {
-                                    total += RRReceiver.timeSequentialRRValues.get(i - 1);
+                                for (int i = 1; i <= avgWindowSize; i++) {
+                                    total += RRReceiver.timeSequentialRRValues.get(numSamples-i);
                                 }
                                 float avg = total / avgWindowSize;
-                                hrSeries.appendData(new DataPoint(currentXPos,
-                                                ((float) 600000) / ((Polar.PolarTask) inputMessage.obj).rr),
+                                hrSeries.appendData(new DataPoint(currentXPos*updateRateMS,
+                                                ((float) 60000) / avg),
                                         false, 1000000);
                                 if (currentXPos == 0) {
                                     toggleBreathTimer(true);
