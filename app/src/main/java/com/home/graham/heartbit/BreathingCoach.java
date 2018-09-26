@@ -335,8 +335,12 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 toggleRecording();
             }
             uiMessageHandler = new Handler(Looper.getMainLooper());
-            polarService.interrupt();
-            receiverService.interrupt();
+            if (polarService != null) {
+                polarService.interrupt();
+            }
+            if (receiverService != null) {
+                receiverService.interrupt();
+            }
             finish();
         }
     }

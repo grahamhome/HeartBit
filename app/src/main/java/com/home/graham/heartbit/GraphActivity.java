@@ -76,6 +76,8 @@ public class GraphActivity extends AppCompatActivity implements ActivityCompat.O
         graph = findViewById(R.id.graph);
         graph.getGridLabelRenderer().setHorizontalAxisTitle("Session Duration (Seconds)");
         graph.getGridLabelRenderer().setVerticalAxisTitle("Heart Rate (BPM)");
+        graph.getLegendRenderer().setVisible(true);
+        graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.BOTTOM);
         graph.getGridLabelRenderer().setLabelFormatter( new DefaultLabelFormatter() {
             @Override
             public String formatLabel(double value, boolean isValueX) {
@@ -83,7 +85,7 @@ public class GraphActivity extends AppCompatActivity implements ActivityCompat.O
                     if (value % 1000 == 0) {
                         return String.valueOf((int)(value/1000));
                     } else {
-                        return null;
+                        return "";
                     }
                 } else {
                     return super.formatLabel(value, isValueX);
@@ -105,6 +107,7 @@ public class GraphActivity extends AppCompatActivity implements ActivityCompat.O
 
         // Request permissions
         if (location_permission_needed) {
+            requesting = true;
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle(R.string.permission_request_explanation_title);
             builder.setMessage(R.string.permission_request_explanation);
@@ -113,8 +116,10 @@ public class GraphActivity extends AppCompatActivity implements ActivityCompat.O
                 @Override
                 public void onDismiss(DialogInterface dialog) {
                     if (location_permission_needed) {
-                        requesting = true;
                         requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
+                    }
+                    else {
+                        requesting = false;
                     }
                 }
             });
@@ -145,8 +150,6 @@ public class GraphActivity extends AppCompatActivity implements ActivityCompat.O
         graph.getViewport().setScalable(true);
         graph.getViewport().setScalableY(false);
         graph.getViewport().setScrollableY(true);
-        graph.getLegendRenderer().setVisible(true);
-        graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.BOTTOM);
     }
 
     private void enableBreathTimer() {
@@ -155,7 +158,7 @@ public class GraphActivity extends AppCompatActivity implements ActivityCompat.O
             @Override
             public void run() {
                 if (RRReceiver.recording) {
-                    double yVal = ((Math.sin(((2 * Math.PI / (frequency)) * currentXPos) + (Math.PI / -2)) + 1) * 15) + 60;
+                    double yVal = ((Math.sin(((2 * Math.PI / (frequency)) * currentXPos) + (Math.PI / -2)) + 1) * 20) + 60;
                     breathSeries.appendData(new DataPoint(currentXPos*updateRateMS, yVal), (currentXPos*updateRateMS > singleBreathTimeMS*10), 1000000);
                     currentXPos++;
                     handler.postDelayed(this, updateRateMS);
@@ -274,8 +277,12 @@ public class GraphActivity extends AppCompatActivity implements ActivityCompat.O
                 toggleRecording();
             }
             uiMessageHandler = new Handler(Looper.getMainLooper());
-            polarService.interrupt();
-            receiverService.interrupt();
+            if (polarService != null) {
+                polarService.interrupt();
+            }
+            if (receiverService != null) {
+                receiverService.interrupt();
+            }
             finish();
         }
     }
