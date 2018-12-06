@@ -75,6 +75,17 @@
 
     </ScrollView>
 
+    <ImageButton
+        android:id="@+id/settings_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:src="@drawable/ic_baseline_settings"
+        android:layout_toStartOf="@id/toggle"
+        android:layout_above="@id/status_display"
+        android:layout_marginEnd="35dp"
+        android:layout_marginBottom="10dp"
+        android:background="@null"/>
+
     <Button
         android:id="@+id/toggle"
         android:layout_width="140dp"
@@ -107,6 +118,6 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="10dp"
-        android:text="@string/connection_status_label"/>
+        android:text="@string/connection_status_connecting"/>
 
 </RelativeLayout>

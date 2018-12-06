@@ -17,20 +17,20 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".BreathingCoach"
-            android:screenOrientation="sensorPortrait">
-        </activity>
+            android:screenOrientation="sensorPortrait"></activity>
         <activity android:name=".IntroActivity" />
         <activity android:name=".InfoActivity" />
         <activity
             android:name=".GraphActivity"
-            android:screenOrientation="sensorLandscape"></activity>
+            android:screenOrientation="sensorLandscape" />
         <activity android:name=".PickerActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity android:name=".SettingsActivity"></activity>
     </application>
 
 </manifest>

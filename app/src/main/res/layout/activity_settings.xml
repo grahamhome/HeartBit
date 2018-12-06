@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:id="@+id/mainView"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SettingsActivity">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/Base.TextAppearance.AppCompat.Headline"
+        android:layout_alignParentTop="true"
+        android:textAlignment="center"
+        android:text="@string/settings_title"
+        android:layout_marginBottom="20dp"/>
+
+    <TextView
+        android:id="@+id/session_length_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/Base.TextAppearance.AppCompat.Body1"
+        android:textAlignment="center"
+        android:layout_marginBottom="10dp"
+        android:layout_below="@id/title"
+        android:text="@string/session_length_title"/>
+
+    <LinearLayout
+        android:id="@+id/breathing_session_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/session_length_title"
+        android:layout_marginBottom="20dp"
+        android:gravity="center_horizontal">
+
+        <EditText
+            android:id="@+id/session_length_min"
+            android:layout_width="100sp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/min_label"
+            android:layout_marginEnd="20dp"/>
+
+        <EditText
+            android:id="@+id/session_length_sec"
+            android:layout_width="100sp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:maxLength="2"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sec_label"
+            android:layout_marginEnd="20dp"/>
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/pair_checkbox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/breathing_session_layout"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="20dp"
+        android:text="@string/in_out_pair_label"/>
+
+    <TextView
+        android:id="@+id/inhale_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/Base.TextAppearance.AppCompat.Body1"
+        android:textAlignment="center"
+        android:layout_marginBottom="10dp"
+        android:layout_below="@id/pair_checkbox"
+        android:text="@string/in_title"/>
+
+    <LinearLayout
+        android:id="@+id/inhale_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/inhale_title"
+        android:layout_marginBottom="20dp"
+        android:gravity="center_horizontal">
+
+        <EditText
+            android:id="@+id/breath_in_sec"
+            android:layout_width="100sp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sec_label"
+            android:layout_marginEnd="20dp"/>
+
+        <EditText
+            android:id="@+id/breath_in_ms"
+            android:layout_width="100sp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:maxLength="3"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ms_label"
+            android:layout_marginEnd="20dp"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/exhale_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/Base.TextAppearance.AppCompat.Body1"
+        android:textAlignment="center"
+        android:layout_marginBottom="10dp"
+        android:layout_below="@id/inhale_layout"
+        android:text="@string/out_title"/>
+
+    <LinearLayout
+        android:id="@+id/exhale_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/exhale_title"
+        android:layout_marginBottom="20dp"
+        android:gravity="center_horizontal">
+
+        <EditText
+            android:id="@+id/breath_out_sec"
+            android:layout_width="100sp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sec_label"
+            android:layout_marginEnd="20dp"/>
+
+        <EditText
+            android:id="@+id/breath_out_ms"
+            android:layout_width="100sp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:maxLength="3"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ms_label"
+            android:layout_marginEnd="20dp"/>
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/participant_settings_checkbox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/button_layout"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="20dp"
+        android:text="@string/part_settings_enable_label"/>
+
+    <LinearLayout
+        android:id="@+id/button_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        android:gravity="center_horizontal">
+
+        <Button
+            android:id="@+id/copy_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="20dp"
+            android:paddingHorizontal="10dp"
+            android:text="@string/copy_btn_text"
+            android:background="@drawable/button_2"/>
+
+        <Button
+            android:id="@+id/save_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="20dp"
+            android:text="@string/save_btn_text"
+            android:background="@drawable/button"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

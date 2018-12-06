@@ -33,7 +33,7 @@ public class CircleProgress extends View {
     private int default_finished_color = 0;
     private int default_unfinished_color = 0;
     private final int default_text_color = Color.WHITE;
-    private final int default_max = BreathingCoach.singleBreathTimeMS;
+    private final int default_max = 5000;
     private final float default_text_size = 80;
     private final int min_size = 100;
 
@@ -111,11 +111,11 @@ public class CircleProgress extends View {
 
     public void setProgress(float progress) {
         this.progress = progress;
-        if (this.progress > getMax()) {
+        /*if (this.progress > getMax()) {
             this.progress = getMax();
         } else if (this.progress < 0) {
             this.progress = 0;
-        }
+        }*/
         invalidate();
     }
 

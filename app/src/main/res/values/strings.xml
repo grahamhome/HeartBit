@@ -10,7 +10,7 @@
     <string name="start_btn_text">Start</string>
     <string name="stop_btn_text">Stop</string>
     <string name="early_termination_warning_title">Are you sure?</string>
-    <string name="early_termination_warning">The current breathing session is less than 3 minutes. If you stop now, we won\'t get the high-quality data we need for our research.\n\nAre you sure you want to stop the session now?
+    <string name="early_termination_warning">The current breathing session is less the recommended time. If you stop now, we won\'t get the high-quality data we need for our research.\n\nAre you sure you want to stop the session now?
     </string>
     <string name="stop_session_text">Stop Session</string>
     <string name="continue_session_text">Continue Session</string>
@@ -29,7 +29,7 @@
     <string name="monitor_not_found_message">The heart rate monitor could not be found. Please ensure it is being worn correctly before continuing.</string>
     <string name="name_label_text">Your Name:</string>
     <string name="name_field_error">Please enter your first name.</string>
-    <string name="main_activity_title">3-Minute Breathing Session</string>
+    <string name="main_activity_title">Breathing Session</string>
     <string name="breathe_in">inhale</string>
     <string name="breathe_out">exhale</string>
     <string name="help_link_text">\?</string>
@@ -39,8 +39,23 @@
     <string name="participant_activity_name">Participant Activity</string>
     <string name="researcher_activity_name">Researcher Activity</string>
     <string name="timeout_warning">Make sure Polar is secure</string>
-
-    <string name="title_activity_graph">GraphActivity</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="settings_title">Breathing Rate Settings</string>
+    <string name="in_out_pair_label">Inhale Duration = Exhale Duration</string>
+    <string name="in_title">Inhale Duration</string>
+    <string name="out_title">Exhale Duration</string>
+    <string name="both_title">Inhale/Exhale Duration</string>
+    <string name="min_label">min</string>
+    <string name="sec_label">sec</string>
+    <string name="ms_label">ms</string>
+    <string name="session_length_title">Session Duration</string>
+    <string name="part_settings_enable_label">Participant settings enabled</string>
+    <string name="save_btn_text">Save</string>
+    <string name="copy_btn_text">Copy to Participant Settings</string>
+    <string name="copy_success_msg">Settings copied</string>
+    <string name="password_prompt_title">Researcher Mode</string>
+    <string name="password_prompt_message">If you are a researcher, please enter the Researcher Password below. Otherwise, please press "cancel" to return to the breathing exercise screen.</string>
+    <string name="cancel_btn_text">Cancel</string>
+    <string name="enter_btn_text">Enter</string>
+    <string name="top_secret_password">hrv4science</string>
+    <string name="wrong_password_message">Nice try!</string>
 </resources>

@@ -30,6 +30,7 @@ dependencies {
     api 'com.google.firebase:firebase-storage:16.0.1'
     api 'com.google.firebase:firebase-auth:16.0.2'
     implementation 'com.jjoe64:graphview:4.2.2'
+    implementation 'com.github.karlotoy:perfectTune:1.0.2'
 }
 repositories {
     mavenCentral()

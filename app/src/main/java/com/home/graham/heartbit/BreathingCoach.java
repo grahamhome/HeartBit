@@ -18,11 +18,18 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.karlotoy.perfectune.instance.PerfectTune;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -42,6 +49,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     private static CircleProgress breathProgress;
     private static TextView sessionTimer;
     private static TextView helpLink;
+    private static ImageButton settingsButton;
 
     // Session variables
     private static boolean connected = false;
@@ -59,25 +67,41 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
 
     // Timer variables TODO: Make a timer class
     private static int timerTickMS = 25;
-    public static int singleBreathTimeMS = 5000;
-    public static int sessionTotalTimeMS = 180000;
     private static int secondsElapsed = 0;
     private static Timer animationTimer;
+
+    public static int breathInTimeMS;
+    public static int breathOutTimeMS;
+    public static int sessionTimeMS;
 
     private boolean helping = false;
     private boolean warning = false;
     private boolean requesting = false;
 
+    private Tone tone;
+
+    private boolean participantSettings = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        boolean configured = getIntent().getBooleanExtra("fromSettings", false);
+        participantSettings = UserData.getParticipantSettingsEnabled(BreathingCoach.this);
+        // Get breathing rate & session length variables
+        breathInTimeMS = UserData.getBRIn(participantSettings, BreathingCoach.this);
+        breathOutTimeMS = UserData.getBROut(participantSettings, BreathingCoach.this);
+        sessionTimeMS = UserData.getSessionLength(participantSettings, BreathingCoach.this);
         // Set up UI
         setContentView(R.layout.activity_breathing_coach);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        (connectionDisplay = findViewById(R.id.status_display)).setText("Connecting");
+        connectionDisplay = findViewById(R.id.status_display);
         (breathProgress = findViewById(R.id.circle_progress)).setProgress(0);
+        breathProgress.setMax(breathInTimeMS);
         (sessionProgress = findViewById(R.id.arc_progress)).setProgress(0);
+        sessionProgress.setMax(sessionTimeMS);
         (sessionTimer = findViewById(R.id.session_timer)).setText("00:00");
+
+        tone = new Tone();
 
         (toggleButton = findViewById(R.id.toggle)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -110,6 +134,47 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             }
         });
 
+        (settingsButton = findViewById(R.id.settings_btn)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent settingsIntent = new Intent(BreathingCoach.this, SettingsActivity.class);
+                settingsIntent.putExtra("participantMode", true);
+                startActivity(settingsIntent);
+                finish();
+            }
+        });
+        if (!participantSettings) {
+            settingsButton.setEnabled(false);
+            settingsButton.setImageResource(R.drawable.ic_baseline_settings_inactive);
+        }
+        ((TextView) findViewById(R.id.title)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!RRReceiver.recording) {
+                    AlertDialog.Builder passwordPrompt = new AlertDialog.Builder(BreathingCoach.this);
+                    passwordPrompt.setTitle(R.string.password_prompt_title);
+                    passwordPrompt.setMessage(R.string.password_prompt_message);
+                    final EditText passwordField = new EditText(BreathingCoach.this);
+                    passwordField.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    passwordPrompt.setView(passwordField);
+                    passwordPrompt.setNegativeButton(R.string.cancel_btn_text, null);
+                    passwordPrompt.setPositiveButton(R.string.enter_btn_text, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            if (passwordField.getText().toString().equals(getString(R.string.top_secret_password))) {
+                                Intent settingsIntent = new Intent(BreathingCoach.this, SettingsActivity.class);
+                                settingsIntent.putExtra("participantMode", false);
+                                startActivity(settingsIntent);
+                                finish();
+                            } else {
+                                Toast.makeText(getApplicationContext(), getString(R.string.wrong_password_message), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                    passwordPrompt.show();
+                }
+            }
+        });
         // Check for permissions
         location_permission_needed = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) &&
                 (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED));
@@ -132,7 +197,11 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             builder.show();
         } else {
             setUpMessageHandler();
-            connect();
+            if (!connected) {
+                connect();
+            } else {
+                showConnected();
+            }
         }
     }
 
@@ -142,6 +211,10 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
                 breathProgress.setText(getString(R.string.breathe_in));
                 toggleButton.setText(getText(R.string.stop_btn_text));
+                if (participantSettings) {
+                    settingsButton.setEnabled(false);
+                    settingsButton.setImageResource(R.drawable.ic_baseline_settings_inactive);
+                }
                 secondsElapsed = 0;
                 (animationTimer = new Timer()).schedule(new TimerTask() {
                     long lastTickTime = 0;
@@ -162,9 +235,10 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         }
                     }
                 }, 0, timerTickMS);
+                tone.start();
             }
         } else {
-            if (secondsElapsed < sessionTotalTimeMS/1000){
+            if (secondsElapsed < sessionTimeMS/1000){
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle(R.string.early_termination_warning_title);
                 builder.setMessage(R.string.early_termination_warning);
@@ -183,6 +257,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     }
 
     private void stopRecording() {
+        tone.end();
         RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
         animationTimer.cancel();
         sessionTimer.setTextColor(Color.BLACK);
@@ -191,6 +266,10 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
         sessionProgress.setProgress(0);
         breathProgress.setText(null);
         toggleButton.setText(getText(R.string.start_btn_text));
+        if (participantSettings) {
+            settingsButton.setEnabled(true);
+            settingsButton.setImageResource(R.drawable.ic_baseline_settings);
+        }
     }
 
     private void setUpMessageHandler() {
@@ -203,11 +282,7 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         connectionDisplay.setText(R.string.connection_status_ok);
                         connectionDisplay.setTextColor(Color.GREEN);
                     case Polar.CONNECTED:
-                        connectionDisplay.setText(R.string.connection_status_ok);
-                        connectionDisplay.setTextColor(Color.GREEN);
-                        toggleButton.setBackground(getDrawable(R.drawable.button));
-                        toggleButton.setEnabled(true);
-                        connected = true;
+                        showConnected();
                         break;
                     case Polar.COULD_NOT_CONNECT:
                         if (!warning) {
@@ -246,18 +321,26 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         break;
                     case SESSION_TIMER_TICK:
                         float progress = breathProgress.getProgress();
-                        if (flipped = ((in && progress == singleBreathTimeMS) || (!in && progress == 0))) {
+                        if (flipped = ((in && progress == breathInTimeMS) || (!in && progress == 0))) {
                             in = !in;
+                            if (breathOutTimeMS != breathInTimeMS) {
+                                if (in) {
+                                    breathProgress.setMax(breathInTimeMS);
+                                    breathProgress.setProgress(0);
+                                } else {
+                                    breathProgress.setMax(breathOutTimeMS);
+                                    breathProgress.setProgress(breathOutTimeMS);
+                                }
+                            }
+                            breathProgress.setText(in ? getString(R.string.breathe_in) : getString(R.string.breathe_out));
+                            tone.changeTone(in);
                         }
                         breathProgress.setProgress(progress + (timerTickMS * (in ? 1 : -1)));
                         sessionProgress.setProgress(sessionProgress.getProgress() + timerTickMS);
-                        if (flipped) {
-                            breathProgress.setText(in ? getString(R.string.breathe_in) : getString(R.string.breathe_out));
-                        }
                         break;
                     case CHRONOMETER_TICK:
                         secondsElapsed++;
-                        if (secondsElapsed <= sessionTotalTimeMS/1000) {
+                        if (secondsElapsed <= sessionTimeMS/1000) {
                             int mins = secondsElapsed / 60;
                             int sec = secondsElapsed % 60;
                             String time = (mins > 9 ? mins : "0" + mins) + ":" + (sec > 9 ? sec : "0" + sec);
@@ -289,6 +372,14 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
         polarService.start();
     }
 
+    private void showConnected() {
+        connectionDisplay.setText(R.string.connection_status_ok);
+        connectionDisplay.setTextColor(Color.GREEN);
+        toggleButton.setBackground(getDrawable(R.drawable.button));
+        toggleButton.setEnabled(true);
+        connected = true;
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int grantResults[]) {
         requesting = false;
@@ -297,7 +388,11 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 if (grantResults.length > 0) {
                     if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                         setUpMessageHandler();
-                        connect();
+                        if (!connected) {
+                            connect();
+                        } else {
+                            showConnected();
+                        }
                     } else {
                         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
                         builder.setTitle(R.string.permission_denied_title);

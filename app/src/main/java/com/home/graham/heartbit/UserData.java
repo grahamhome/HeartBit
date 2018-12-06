@@ -49,4 +49,35 @@ public class UserData {
     public static String getMonitorID(Activity invoker) {
         return getUserData(invoker).getString("Monitor_ID", "no-monitor-found");
     }
+
+    public static void setBreathingConfig(boolean participantMode, int breathIn, int breathOut, int sessionLength, Boolean inOutPaired, Boolean participantSettingsEnabled, Activity invoker) {
+        SharedPreferences.Editor researcherBREditor = getUserData(invoker).edit();
+        researcherBREditor.putInt(participantMode ? "Participant_BR_In" : "Researcher_BR_In", breathIn);
+        researcherBREditor.putInt(participantMode ? "Participant_BR_Out" : "Researcher_BR_Out", breathOut);
+        researcherBREditor.putInt(participantMode ? "Participant_Session_Length" : "Researcher_Session_Length", sessionLength);
+        researcherBREditor.putBoolean(participantMode ? "Participant_In_Out_Paired" : "Researcher_In_Out_Paired", inOutPaired);
+        researcherBREditor.putBoolean("Participant_Settings_Enabled", participantSettingsEnabled);
+        researcherBREditor.apply();
+    }
+
+    public static Integer getBRIn(boolean participantMode, Activity invoker) {
+        return getUserData(invoker).getInt(participantMode ? "Participant_BR_In" : "Researcher_BR_In", 5000);
+    }
+
+    public static Integer getBROut(boolean participantMode, Activity invoker) {
+        return getUserData(invoker).getInt(participantMode ? "Participant_BR_Out" : "Researcher_BR_Out", 5000);
+    }
+
+    public static Integer getSessionLength(boolean participantMode, Activity invoker) {
+        return getUserData(invoker).getInt(participantMode ? "Participant_Session_Length" : "Researcher_Session_Length", 180000);
+    }
+
+    public static Boolean getInOutPaired(boolean participantMode, Activity invoker) {
+        return getUserData(invoker).getBoolean(participantMode ? "Participant_In_Out_Paired" : "Researcher_In_Out_Paired", false);
+    }
+
+    public static Boolean getParticipantSettingsEnabled(Activity invoker) {
+        return getUserData(invoker).getBoolean("Participant_Settings_Enabled", true);
+    }
+
 }
