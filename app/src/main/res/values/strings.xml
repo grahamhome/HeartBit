@@ -2,7 +2,7 @@
     <string name="app_name">HeartBit</string>
     <string name="ble_not_supported">Sorry, Bluetooth Low Energy is not supported on this device.</string>
     <string name="intro_title">Welcome to HeartBit!</string>
-    <string name="intro_text">This application will coach you through a simple breathing routine. During this time, it will collect information about your heart rate from a Polar heart rate monitor. This data will be stored on our secure server for research purposes.\n\nBy using this app, you are helping us research the effect of heart rate variability (HRV) on overall health and wellness. Thank you for participating!\n\nWhen you are ready to begin, enter your first name in the field below and click \"Start\" to begin using the app.
+    <string name="intro_text">This application will coach you through a simple breathing routine. During this time, it will collect information about your heart rate from a Bluetooth heart rate monitor. This data will be stored on our secure server for research purposes.\n\nBy using this app, you are helping us research the effect of heart rate variability (HRV) on overall health and wellness. Thank you for participating!\n\nThe first few times you use the app, we will pick a breathing rate for you so that you can learn if you prefer a faster or slower rate. After a few sessions, you will be able to customize the breathing rate yourself.\n\nWhen you are ready to begin, click \"Start\" to begin using the app.
     </string>
     <string name="instructions_title">Instructions</string>
     <string name="instructions">To use this app, just follow these steps:\n\n1. Put on your Polar heart rate monitor and wait until the word \"Connected\" appears at the top of the screen.\n\n2. Press \"Start\" to begin your breathing session. Breathe in and out as instructed by the app. Please do not close the application or engage in other activities during the breathing session. Match your breathing rate as closely as possible to the progress of the blue circle on the screen. The green bar will be full when the recommended 3-minute duration has been reached.\n\n3. After 3 minutes, you can stop the breathing session at any time by pressing the \"Stop\" button. You can stop the session before 3 minutes if you need to, but this will provide less useful data for our research.\n\n4. Wait until the app says that your data has been saved before closing the app.\n\nYou can review these instructions at any time by clicking the question mark on the main screen.</string>
@@ -36,7 +36,7 @@
     <string name="researcher_name">Dr. B</string>
     <string name="researcher_mode_unlock_message">Researcher mode unlocked!</string>
     <string name="activity_picker_title">Select Activity</string>
-    <string name="participant_activity_name">Participant Activity</string>
+    <string name="participant_activity_name">Breathing Exercise</string>
     <string name="researcher_activity_name">Researcher Activity</string>
     <string name="timeout_warning">Make sure Polar is secure</string>
     <string name="settings_title">Breathing Rate Settings</string>
@@ -58,4 +58,39 @@
     <string name="enter_btn_text">Enter</string>
     <string name="top_secret_password">hrv4science</string>
     <string name="wrong_password_message">Nice try!</string>
+    <string name="data_collection_title">About Me</string>
+    <string name="data_collection_description">The following optional information will help us in our research.\n\nAll data will be stored anonymously, but if you are not comfortable answering any of the questions below, feel free to leave that field blank.</string>
+    <string name="data_collection_dob">What is your date of birth? (mm/dd/yyyy)</string>
+    <string name="data_collection_gender">What is your gender identity?</string>
+    <string-array name="gender_options">
+        <item></item>
+        <item>Female</item>
+        <item>Male</item>
+        <item>Trans Female</item>
+        <item>Trans Male</item>
+        <item>Gender Non-Conforming</item>
+        <item>Something Else</item>
+    </string-array>
+    <string name="data_collection_race">How would you describe yourself?</string>
+    <string-array name="race_options">
+        <item></item>
+        <item>Alaska Native</item>
+        <item>Asian</item>
+        <item>Black or African-American</item>
+        <item>Native American</item>
+        <item>Native Hawaiian or Pacific Islander</item>
+        <item>White</item>
+        <item>Something Else</item>
+    </string-array>
+    <string name="data_collection_weight">What is your body weight?</string>
+    <string name="lbs_label">lbs</string>
+    <string name="data_collection_smoker">Do you smoke tobacco products?</string>
+    <string-array name="smoker_options">
+        <item></item>
+        <item>Yes</item>
+        <item>No</item>
+        <item>Not currently</item>
+    </string-array>
+    <string name="submit_btn_text">Submit</string>
+    <string name="settings_btn_text">Settings</string>
 </resources>

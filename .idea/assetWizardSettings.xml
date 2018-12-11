@@ -14,8 +14,11 @@
                         <option name="values">
                           <map>
                             <entry key="assetSourceType" value="FILE" />
-                            <entry key="outputName" value="ic_heartbeat_solid" />
-                            <entry key="sourceFile" value="C:\Users\Graham\Downloads\heartbeat-solid.svg" />
+                            <entry key="height" value="50" />
+                            <entry key="outputName" value="ic_baseline_settings_20px" />
+                            <entry key="overrideSize" value="true" />
+                            <entry key="sourceFile" value="C:\Users\Graham\Downloads\baseline-settings-20px.svg" />
+                            <entry key="width" value="50" />
                           </map>
                         </option>
                       </PersistentState>

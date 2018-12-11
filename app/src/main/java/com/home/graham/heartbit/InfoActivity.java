@@ -15,7 +15,7 @@ public class InfoActivity extends AppCompatActivity {
         findViewById(R.id.ok_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                UserData.setIntructionsViewed(true, InfoActivity.this);
+                UserData.setIntructionsViewed(InfoActivity.this);
                 startActivity(new Intent(InfoActivity.this, PickerActivity.class));
             }
         });

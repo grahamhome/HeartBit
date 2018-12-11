@@ -18,17 +18,13 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.InputType;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.karlotoy.perfectune.instance.PerfectTune;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -46,14 +42,14 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     private static TextView connectionDisplay;
     private static Button toggleButton;
     private static ArcProgress sessionProgress;
-    private static CircleProgress breathProgress;
+    private static CircleProgress breathProgressIn;
+    private static CircleProgress breathProgressOut;
     private static TextView sessionTimer;
     private static TextView helpLink;
-    private static ImageButton settingsButton;
 
     // Session variables
     private static boolean connected = false;
-    private static boolean in = false;
+    private static boolean in = true;
 
     // Polar connection variables
     public static BluetoothAdapter bluetoothAdapter;
@@ -85,21 +81,28 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        boolean configured = getIntent().getBooleanExtra("fromSettings", false);
         participantSettings = UserData.getParticipantSettingsEnabled(BreathingCoach.this);
         // Get breathing rate & session length variables
-        breathInTimeMS = UserData.getBRIn(participantSettings, BreathingCoach.this);
-        breathOutTimeMS = UserData.getBROut(participantSettings, BreathingCoach.this);
-        sessionTimeMS = UserData.getSessionLength(participantSettings, BreathingCoach.this);
+        float breathInTimeSec = UserData.getBRIn(participantSettings, BreathingCoach.this);
+        breathInTimeMS = (int)(breathInTimeSec *1000);
+        float breathOutTimeSec = UserData.getBROut(participantSettings, BreathingCoach.this);
+        breathOutTimeMS = (int)(breathOutTimeSec*1000);
+        int sessionTimeMin = UserData.getSessionLength(participantSettings, BreathingCoach.this);
+        sessionTimeMS = (sessionTimeMin*60000);
         // Set up UI
         setContentView(R.layout.activity_breathing_coach);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        ((TextView)findViewById(R.id.title)).setText(sessionTimeMin + "-Minute " + getString(R.string.main_activity_title));
         connectionDisplay = findViewById(R.id.status_display);
-        (breathProgress = findViewById(R.id.circle_progress)).setProgress(0);
-        breathProgress.setMax(breathInTimeMS);
+        (breathProgressIn = findViewById(R.id.circle_progress_in)).setProgress(0);
+        breathProgressIn.setMax(breathInTimeMS);
+        (breathProgressOut = findViewById(R.id.circle_progress_out)).setMax(breathOutTimeMS);
+        breathProgressOut.setProgress(breathOutTimeMS);
         (sessionProgress = findViewById(R.id.arc_progress)).setProgress(0);
         sessionProgress.setMax(sessionTimeMS);
         (sessionTimer = findViewById(R.id.session_timer)).setText("00:00");
+
+        ((TextView)findViewById(R.id.current_rate)).setText(breathInTimeSec + "-second inhale, " + breathOutTimeSec + "-second exhale");
 
         tone = new Tone();
 
@@ -134,47 +137,6 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
             }
         });
 
-        (settingsButton = findViewById(R.id.settings_btn)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent settingsIntent = new Intent(BreathingCoach.this, SettingsActivity.class);
-                settingsIntent.putExtra("participantMode", true);
-                startActivity(settingsIntent);
-                finish();
-            }
-        });
-        if (!participantSettings) {
-            settingsButton.setEnabled(false);
-            settingsButton.setImageResource(R.drawable.ic_baseline_settings_inactive);
-        }
-        ((TextView) findViewById(R.id.title)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!RRReceiver.recording) {
-                    AlertDialog.Builder passwordPrompt = new AlertDialog.Builder(BreathingCoach.this);
-                    passwordPrompt.setTitle(R.string.password_prompt_title);
-                    passwordPrompt.setMessage(R.string.password_prompt_message);
-                    final EditText passwordField = new EditText(BreathingCoach.this);
-                    passwordField.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                    passwordPrompt.setView(passwordField);
-                    passwordPrompt.setNegativeButton(R.string.cancel_btn_text, null);
-                    passwordPrompt.setPositiveButton(R.string.enter_btn_text, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            if (passwordField.getText().toString().equals(getString(R.string.top_secret_password))) {
-                                Intent settingsIntent = new Intent(BreathingCoach.this, SettingsActivity.class);
-                                settingsIntent.putExtra("participantMode", false);
-                                startActivity(settingsIntent);
-                                finish();
-                            } else {
-                                Toast.makeText(getApplicationContext(), getString(R.string.wrong_password_message), Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
-                    passwordPrompt.show();
-                }
-            }
-        });
         // Check for permissions
         location_permission_needed = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) &&
                 (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED));
@@ -209,12 +171,8 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
         if (!RRReceiver.recording) {
             if (connected) {
                 RRReceiver.rrHandler.obtainMessage(TOGGLE_RECORDING).sendToTarget();
-                breathProgress.setText(getString(R.string.breathe_in));
+                breathProgressIn.setText(getString(R.string.breathe_in));
                 toggleButton.setText(getText(R.string.stop_btn_text));
-                if (participantSettings) {
-                    settingsButton.setEnabled(false);
-                    settingsButton.setImageResource(R.drawable.ic_baseline_settings_inactive);
-                }
                 secondsElapsed = 0;
                 (animationTimer = new Timer()).schedule(new TimerTask() {
                     long lastTickTime = 0;
@@ -222,13 +180,13 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
 
                     @Override
                     public void run() {
+                        BreathingCoach.uiMessageHandler.obtainMessage(SESSION_TIMER_TICK).sendToTarget();
                         long now = SystemClock.elapsedRealtime();
                         if (lastTickTime == 0) {
                             lastTickTime = SystemClock.elapsedRealtime();
                         } else {
                             timeDifference = now - lastTickTime;
                         }
-                        BreathingCoach.uiMessageHandler.obtainMessage(SESSION_TIMER_TICK).sendToTarget();
                         if (Math.round(timeDifference - 1000f) >= 1) {
                             BreathingCoach.uiMessageHandler.obtainMessage(CHRONOMETER_TICK).sendToTarget();
                             lastTickTime = now;
@@ -262,19 +220,23 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
         animationTimer.cancel();
         sessionTimer.setTextColor(Color.BLACK);
         sessionTimer.setText("00:00");
-        breathProgress.setProgress(0);
+        breathProgressIn.setProgress(0);
+        if (!in) {
+            breathProgressOut.setVisibility(View.INVISIBLE);
+            breathProgressIn.setVisibility(View.VISIBLE);
+            in = true;
+        }
+        breathProgressOut.setProgress(breathOutTimeMS);
         sessionProgress.setProgress(0);
-        breathProgress.setText(null);
+        breathProgressIn.setText(null);
         toggleButton.setText(getText(R.string.start_btn_text));
-        if (participantSettings) {
-            settingsButton.setEnabled(true);
-            settingsButton.setImageResource(R.drawable.ic_baseline_settings);
+        if (UserData.getNumberOfTrials(BreathingCoach.this) < PickerActivity.trialValues.size()+1) {
+            UserData.incrementTrialCount(BreathingCoach.this);
         }
     }
 
     private void setUpMessageHandler() {
         uiMessageHandler = new Handler(Looper.getMainLooper()) {
-            boolean flipped = false;
             @Override
             public void handleMessage(Message inputMessage) {
                 switch (inputMessage.what) {
@@ -320,22 +282,23 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                         Toast.makeText(getApplicationContext(), inputMessage.obj.toString(), Toast.LENGTH_SHORT).show();
                         break;
                     case SESSION_TIMER_TICK:
-                        float progress = breathProgress.getProgress();
-                        if (flipped = ((in && progress == breathInTimeMS) || (!in && progress == 0))) {
+                        float progress = in ? breathProgressIn.getProgress() : breathProgressOut.getProgress();
+                        if ((in && progress == breathInTimeMS) || (!in && progress == 0)) {
                             in = !in;
-                            if (breathOutTimeMS != breathInTimeMS) {
-                                if (in) {
-                                    breathProgress.setMax(breathInTimeMS);
-                                    breathProgress.setProgress(0);
-                                } else {
-                                    breathProgress.setMax(breathOutTimeMS);
-                                    breathProgress.setProgress(breathOutTimeMS);
-                                }
+                            if (in) {
+                                breathProgressIn.setProgress(0);
+                                breathProgressOut.setVisibility(View.INVISIBLE);
+                                breathProgressIn.setVisibility(View.VISIBLE);
+                            } else {
+                                breathProgressOut.setProgress(breathOutTimeMS);
+                                breathProgressIn.setVisibility(View.INVISIBLE);
+                                breathProgressOut.setVisibility(View.VISIBLE);
                             }
-                            breathProgress.setText(in ? getString(R.string.breathe_in) : getString(R.string.breathe_out));
                             tone.changeTone(in);
                         }
-                        breathProgress.setProgress(progress + (timerTickMS * (in ? 1 : -1)));
+                        (in ? breathProgressIn : breathProgressOut).setProgress(
+                                (in ? breathProgressIn : breathProgressOut).getProgress() +
+                                        (timerTickMS * (in ? 1 : -1)));
                         sessionProgress.setProgress(sessionProgress.getProgress() + timerTickMS);
                         break;
                     case CHRONOMETER_TICK:

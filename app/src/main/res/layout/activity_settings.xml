@@ -5,7 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SettingsActivity">
+    tools:context=".SettingsActivity"
+    android:layout_margin="20dp">
 
     <TextView
         android:id="@+id/title"
@@ -17,24 +18,22 @@
         android:text="@string/settings_title"
         android:layout_marginBottom="20dp"/>
 
-    <TextView
-        android:id="@+id/session_length_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/Base.TextAppearance.AppCompat.Body1"
-        android:textAlignment="center"
-        android:layout_marginBottom="10dp"
-        android:layout_below="@id/title"
-        android:text="@string/session_length_title"/>
-
     <LinearLayout
         android:id="@+id/breathing_session_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_below="@id/session_length_title"
-        android:layout_marginBottom="20dp"
-        android:gravity="center_horizontal">
+        android:layout_below="@id/title"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/session_length_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Base.TextAppearance.AppCompat.Body1"
+            android:layout_marginBottom="10dp"
+            android:layout_marginEnd="10dp"
+            android:text="@string/session_length_title"/>
 
         <EditText
             android:id="@+id/session_length_min"
@@ -49,19 +48,6 @@
             android:text="@string/min_label"
             android:layout_marginEnd="20dp"/>
 
-        <EditText
-            android:id="@+id/session_length_sec"
-            android:layout_width="100sp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="2"
-            android:layout_marginEnd="10dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/sec_label"
-            android:layout_marginEnd="20dp"/>
     </LinearLayout>
 
     <CheckBox
@@ -69,34 +55,30 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/breathing_session_layout"
-        android:layout_marginStart="10dp"
         android:layout_marginBottom="20dp"
         android:text="@string/in_out_pair_label"/>
-
-    <TextView
-        android:id="@+id/inhale_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/Base.TextAppearance.AppCompat.Body1"
-        android:textAlignment="center"
-        android:layout_marginBottom="10dp"
-        android:layout_below="@id/pair_checkbox"
-        android:text="@string/in_title"/>
 
     <LinearLayout
         android:id="@+id/inhale_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_below="@id/inhale_title"
-        android:layout_marginBottom="20dp"
-        android:gravity="center_horizontal">
+        android:layout_below="@id/pair_checkbox"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/inhale_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Base.TextAppearance.AppCompat.Body1"
+            android:layout_marginBottom="10dp"
+            android:text="@string/in_title"/>
 
         <EditText
             android:id="@+id/breath_in_sec"
             android:layout_width="100sp"
             android:layout_height="wrap_content"
-            android:inputType="number"
+            android:inputType="numberDecimal"
             android:layout_marginEnd="10dp"/>
 
         <TextView
@@ -104,66 +86,35 @@
             android:layout_height="wrap_content"
             android:text="@string/sec_label"
             android:layout_marginEnd="20dp"/>
-
-        <EditText
-            android:id="@+id/breath_in_ms"
-            android:layout_width="100sp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="3"
-            android:layout_marginEnd="10dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/ms_label"
-            android:layout_marginEnd="20dp"/>
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/exhale_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/Base.TextAppearance.AppCompat.Body1"
-        android:textAlignment="center"
-        android:layout_marginBottom="10dp"
-        android:layout_below="@id/inhale_layout"
-        android:text="@string/out_title"/>
 
     <LinearLayout
         android:id="@+id/exhale_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_below="@id/exhale_title"
-        android:layout_marginBottom="20dp"
-        android:gravity="center_horizontal">
+        android:layout_below="@id/inhale_layout"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/exhale_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Base.TextAppearance.AppCompat.Body1"
+            android:layout_marginBottom="10dp"
+            android:text="@string/out_title"/>
 
         <EditText
             android:id="@+id/breath_out_sec"
             android:layout_width="100sp"
             android:layout_height="wrap_content"
-            android:inputType="number"
+            android:inputType="numberDecimal"
             android:layout_marginEnd="10dp"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/sec_label"
-            android:layout_marginEnd="20dp"/>
-
-        <EditText
-            android:id="@+id/breath_out_ms"
-            android:layout_width="100sp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="3"
-            android:layout_marginEnd="10dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/ms_label"
             android:layout_marginEnd="20dp"/>
     </LinearLayout>
 
@@ -172,7 +123,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/button_layout"
-        android:layout_marginStart="10dp"
         android:layout_marginBottom="20dp"
         android:text="@string/part_settings_enable_label"/>
 

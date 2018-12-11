@@ -1,7 +1,5 @@
 package com.home.graham.heartbit;
 
-import android.app.Activity;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -18,10 +16,8 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -98,6 +94,9 @@ public class RRReceiver extends Thread {
                         break;
                     case DEVICE_ID_FOUND:
                         UserData.setMonitorID(inputMessage.obj.toString(), parentActivity.getActivity());
+                        if (!UserData.getDemographicsUploaded(parentActivity.getActivity())) {
+                            writeDemographicsRemote();
+                        }
                         break;
                 }
             }
@@ -123,6 +122,39 @@ public class RRReceiver extends Thread {
         }
     }
 
+    private static void writeDemographicsRemote() {
+        Calendar now = Calendar.getInstance();
+        String fileName = UserData.getMonitorID(parentActivity.getActivity()) + "-" + (now.get(Calendar.MONTH)+1) + "-" + now.get(Calendar.DAY_OF_MONTH) + "-" + now.get(Calendar.YEAR) + "-" +
+                now.get(Calendar.HOUR_OF_DAY) + "-" + now.get(Calendar.MINUTE) + ".csv";
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        final StorageReference storageReference = storage.getReference().child("Demographics/" + fileName);
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+        auth.signInAnonymously().addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+            @Override
+            public void onSuccess(AuthResult authResult) {
+                UploadTask uploadTask = storageReference.putBytes(UserData.getDemographicDataCSV(parentActivity.getActivity()).getBytes());
+                uploadTask.addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        parentActivity.getUIMessageHandler().obtainMessage(USER_MESSAGE, (exception.getCause())).sendToTarget();
+                    }
+                });
+                uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        UserData.setDemographicsUploaded(parentActivity.getActivity());
+                    }
+                });
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                parentActivity.getUIMessageHandler().obtainMessage(USER_MESSAGE, ("Firebase error")).sendToTarget();
+            }
+        });
+    }
+
     private static void writeDataRemote(final boolean cleaned) {
         ArrayList<Float> data = (cleaned ? cleanedRRValues : timeSequentialRRValues);
         if (data.isEmpty()) {
@@ -135,10 +167,13 @@ public class RRReceiver extends Thread {
             }
             rrString.append(rr);
         }
+        boolean participantSettingsEnabled = UserData.getParticipantSettingsEnabled(parentActivity.getActivity());
         final String rrData = rrString.toString();
         Calendar now = Calendar.getInstance();
         String fileName = now.get(Calendar.MONTH)+1 + "-" + now.get(Calendar.DAY_OF_MONTH) + "-" + now.get(Calendar.YEAR) + "-" +
                 now.get(Calendar.HOUR_OF_DAY) + "-" + now.get(Calendar.MINUTE) + "-" + (cleaned ? "cleaned" : "raw") + "-" +
+                UserData.getBRIn(participantSettingsEnabled, parentActivity.getActivity()) + "-in--" +
+                UserData.getBROut(participantSettingsEnabled, parentActivity.getActivity()) + "-out-" +
                 UserData.getMonitorID(parentActivity.getActivity()) + ".txt";
         FirebaseStorage storage = FirebaseStorage.getInstance();
         final StorageReference storageReference = storage.getReference().child("RR-Values/" + UserData.getMonitorID(parentActivity.getActivity()) + "/" + fileName);
@@ -152,11 +187,6 @@ public class RRReceiver extends Thread {
                     @Override
                     public void onFailure(@NonNull Exception exception) {
                         parentActivity.getUIMessageHandler().obtainMessage(USER_MESSAGE, (exception.getCause())).sendToTarget();
-                    }
-                }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        parentActivity.getUIMessageHandler().obtainMessage(USER_MESSAGE, ((cleaned ? "Processed" : "Original") + " file written to Firebase")).sendToTarget();
                     }
                 });
             }
@@ -173,7 +203,6 @@ public class RRReceiver extends Thread {
         int size = timeSequentialRRValues.size();
         cleanedRRValues = new ArrayList<>(timeSequentialRRValues);
         if (size < CORRECTION_WINDOW_SIZE+1 || size < DETECTION_WINDOW_SIZE+1 || size < DRR_DETECTION_WINDOW_SIZE) {
-            parentActivity.getUIMessageHandler().obtainMessage(USER_MESSAGE, "Data is too small to process for correction").sendToTarget();
             return;
         }
         for (int i=0; i<size; i++) {

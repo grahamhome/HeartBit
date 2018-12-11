@@ -17,7 +17,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".BreathingCoach"
-            android:screenOrientation="sensorPortrait"></activity>
+            android:screenOrientation="sensorPortrait" />
         <activity android:name=".IntroActivity" />
         <activity android:name=".InfoActivity" />
         <activity
@@ -30,7 +30,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SettingsActivity"></activity>
+        <activity android:name=".SettingsActivity" />
+        <activity android:name=".DemographicsActivity"></activity>
     </application>
 
 </manifest>

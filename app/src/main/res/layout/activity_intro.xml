@@ -21,7 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/intro_title"
-        android:layout_above="@+id/name_field_layout"
+        android:layout_above="@+id/start_btn"
         android:layout_marginBottom="20dp">
 
         <TextView
@@ -30,28 +30,6 @@
             android:text="@string/intro_text"
             style="@style/Base.TextAppearance.AppCompat.Medium"/>
     </ScrollView>
-
-    <LinearLayout
-        android:id="@+id/name_field_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/start_btn"
-        android:orientation="horizontal"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/name_label_text"
-            style="@style/Base.TextAppearance.AppCompat.Medium"/>
-
-        <EditText
-            android:id="@+id/name_field"
-            android:layout_width="170dp"
-            android:layout_height="wrap_content"
-            style="@style/Base.TextAppearance.AppCompat.Medium"/>
-    </LinearLayout>
 
     <Button
         android:id="@+id/start_btn"

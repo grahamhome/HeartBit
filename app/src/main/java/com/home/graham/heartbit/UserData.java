@@ -10,74 +10,108 @@ public class UserData {
         return invoker.getSharedPreferences("User_Data", Context.MODE_PRIVATE);
     }
 
-    public static void setName(String name, Activity invoker) {
-        SharedPreferences.Editor nameEditor = getUserData(invoker).edit();
-        nameEditor.putString("Name", name);
-        nameEditor.apply();
+    static void setIntroViewed(Activity invoker) {
+        getUserData(invoker).edit().putBoolean("Intro_Viewed", true).apply();
     }
 
-    public static String getName(Activity invoker) {
-        return getUserData(invoker).getString("Name", "User");
-    }
-
-    public static void setIntroViewed(boolean viewed, Activity invoker) {
-        SharedPreferences.Editor introViewedEditor = getUserData(invoker).edit();
-        introViewedEditor.putBoolean("Intro_Viewed", viewed);
-        introViewedEditor.apply();
-    }
-
-    public static boolean getIntroViewed(Activity invoker) {
+    static boolean getIntroViewed(Activity invoker) {
         return getUserData(invoker).getBoolean("Intro_Viewed", false);
     }
 
-    public static void setIntructionsViewed(boolean viewed, Activity invoker) {
-        SharedPreferences.Editor instructionsViewedEditor = getUserData(invoker).edit();
-        instructionsViewedEditor.putBoolean("Instructions_Viewed", viewed);
-        instructionsViewedEditor.apply();
+    static boolean getDemographicsEntered(Activity invoker) {
+        return getUserData(invoker).getBoolean("Demographics_Entered", false);
     }
 
-    public static boolean getInstructionsViewed(Activity invoker) {
+    static void setIntructionsViewed(Activity invoker) {
+        getUserData(invoker).edit().putBoolean("Instructions_Viewed", true).apply();
+    }
+
+    static boolean getInstructionsViewed(Activity invoker) {
         return getUserData(invoker).getBoolean("Instructions_Viewed", false);
     }
 
-    public static void setMonitorID(String id, Activity invoker) {
-        SharedPreferences.Editor monitorIDEditor = getUserData(invoker).edit();
-        monitorIDEditor.putString("Monitor_ID", id);
-        monitorIDEditor.apply();
+    static void setMonitorID(String id, Activity invoker) {
+        getUserData(invoker).edit().putString("Monitor_ID", id).apply();
     }
 
-    public static String getMonitorID(Activity invoker) {
+    static String getMonitorID(Activity invoker) {
         return getUserData(invoker).getString("Monitor_ID", "no-monitor-found");
     }
 
-    public static void setBreathingConfig(boolean participantMode, int breathIn, int breathOut, int sessionLength, Boolean inOutPaired, Boolean participantSettingsEnabled, Activity invoker) {
+    static void setBreathingConfig(boolean participantMode, float breathIn, float breathOut, int sessionLength, Boolean inOutPaired, Boolean participantSettingsEnabled, Activity invoker) {
         SharedPreferences.Editor researcherBREditor = getUserData(invoker).edit();
-        researcherBREditor.putInt(participantMode ? "Participant_BR_In" : "Researcher_BR_In", breathIn);
-        researcherBREditor.putInt(participantMode ? "Participant_BR_Out" : "Researcher_BR_Out", breathOut);
+        researcherBREditor.putFloat(participantMode ? "Participant_BR_In" : "Researcher_BR_In", breathIn);
+        researcherBREditor.putFloat(participantMode ? "Participant_BR_Out" : "Researcher_BR_Out", breathOut);
         researcherBREditor.putInt(participantMode ? "Participant_Session_Length" : "Researcher_Session_Length", sessionLength);
         researcherBREditor.putBoolean(participantMode ? "Participant_In_Out_Paired" : "Researcher_In_Out_Paired", inOutPaired);
         researcherBREditor.putBoolean("Participant_Settings_Enabled", participantSettingsEnabled);
         researcherBREditor.apply();
     }
 
-    public static Integer getBRIn(boolean participantMode, Activity invoker) {
-        return getUserData(invoker).getInt(participantMode ? "Participant_BR_In" : "Researcher_BR_In", 5000);
+    /**
+     * Returns the breathe-in time in sec
+     */
+    static float getBRIn(boolean participantMode, Activity invoker) {
+        return getUserData(invoker).getFloat(participantMode ? "Participant_BR_In" : "Researcher_BR_In", 5.0f);
     }
 
-    public static Integer getBROut(boolean participantMode, Activity invoker) {
-        return getUserData(invoker).getInt(participantMode ? "Participant_BR_Out" : "Researcher_BR_Out", 5000);
+    /**
+     * Returns the breathe-out time in sec
+     */
+    static float getBROut(boolean participantMode, Activity invoker) {
+        return getUserData(invoker).getFloat(participantMode ? "Participant_BR_Out" : "Researcher_BR_Out", 5.0f);
     }
 
-    public static Integer getSessionLength(boolean participantMode, Activity invoker) {
-        return getUserData(invoker).getInt(participantMode ? "Participant_Session_Length" : "Researcher_Session_Length", 180000);
+    /**
+     * Returns the session time in mins
+     */
+    static int getSessionLength(boolean participantMode, Activity invoker) {
+        return getUserData(invoker).getInt(participantMode ? "Participant_Session_Length" : "Researcher_Session_Length", 3);
     }
 
-    public static Boolean getInOutPaired(boolean participantMode, Activity invoker) {
-        return getUserData(invoker).getBoolean(participantMode ? "Participant_In_Out_Paired" : "Researcher_In_Out_Paired", false);
+    static boolean getInOutPaired(boolean participantMode, Activity invoker) {
+        return getUserData(invoker).getBoolean(participantMode ? "Participant_In_Out_Paired" : "Researcher_In_Out_Paired", true);
     }
 
-    public static Boolean getParticipantSettingsEnabled(Activity invoker) {
+    static boolean getParticipantSettingsEnabled(Activity invoker) {
         return getUserData(invoker).getBoolean("Participant_Settings_Enabled", true);
+    }
+
+    static void setDemographicData(Activity invoker, String dob, String weight, String gender, String race, String smoker) {
+        SharedPreferences.Editor demographicsEditor = getUserData(invoker).edit();
+        demographicsEditor.putString("dob", dob);
+        demographicsEditor.putString("weight", weight);
+        demographicsEditor.putString("gender", gender);
+        demographicsEditor.putString("race", race);
+        demographicsEditor.putString("smoker", smoker);
+        demographicsEditor.putBoolean("Demographics_Entered", true).apply();
+    }
+
+    static String getDemographicDataCSV(Activity invoker) {
+        SharedPreferences prefs = getUserData(invoker);
+        return new StringBuilder().append("DOB,Weight (lbs),Gender,Race,Smoker").append("\r\n")
+                .append(prefs.getString("dob","")).append(",")
+                .append(prefs.getString("weight", "")).append(",")
+                .append(prefs.getString("gender", "")).append(",")
+                .append(prefs.getString("race", "")).append(",")
+                .append(prefs.getString("smoker", "")).toString();
+    }
+
+    public static void setDemographicsUploaded(Activity invoker) {
+        getUserData(invoker).edit().putBoolean("demographicsUploaded", true).apply();
+    }
+
+    public static boolean getDemographicsUploaded(Activity invoker) {
+        return getUserData(invoker).getBoolean("demographicsUploaded", false);
+    }
+
+    public static int getNumberOfTrials(Activity invoker) {
+        return getUserData(invoker).getInt("numberTrials", 0);
+    }
+
+    public static void incrementTrialCount(Activity invoker) {
+        SharedPreferences prefs = getUserData(invoker);
+        prefs.edit().putInt("numberTrials", prefs.getInt("numberTrials", 0)+1).apply();
     }
 
 }

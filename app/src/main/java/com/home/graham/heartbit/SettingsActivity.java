@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -19,17 +20,13 @@ public class SettingsActivity extends AppCompatActivity {
 
     private RelativeLayout mainLayout;
     private EditText inSec;
-    private EditText inMs;
     private EditText outSec;
-    private EditText outMs;
     private EditText sessionMin;
-    private EditText sessionSec;
     private CheckBox inOutPaired;
     private CheckBox participantSettingsEnabled;
     private Button copyBtn;
     private Button saveBtn;
     private TextView inhaleTitle;
-    private TextView exhaleTitle;
     private LinearLayout exhaleLayout;
 
     boolean participantMode;
@@ -39,6 +36,7 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         mainLayout = (RelativeLayout)findViewById(R.id.mainView);
         if (participantMode = getIntent().getExtras().getBoolean("participantMode", false)) {
             mainLayout.removeView(findViewById(R.id.participant_settings_checkbox));
@@ -56,26 +54,19 @@ public class SettingsActivity extends AppCompatActivity {
             });
         }
         inSec = findViewById(R.id.breath_in_sec);
-        inMs = findViewById(R.id.breath_in_ms);
         outSec = findViewById(R.id.breath_out_sec);
-        outMs = findViewById(R.id.breath_out_ms);
         sessionMin = findViewById(R.id.session_length_min);
-        sessionSec = findViewById(R.id.session_length_sec);
         inOutPaired = findViewById(R.id.pair_checkbox);
         saveBtn = findViewById(R.id.save_btn);
         inhaleTitle = findViewById(R.id.inhale_title);
-        exhaleTitle = findViewById(R.id.exhale_title);
         exhaleLayout = findViewById(R.id.exhale_layout);
         if (paired = UserData.getInOutPaired(participantMode, SettingsActivity.this)) {
             inOutPaired.setChecked(true);
             toggleExhaleSettings(false);
         }
-        inSec.setText(String.valueOf(UserData.getBRIn(participantMode, SettingsActivity.this)/1000));
-        inMs.setText(String.valueOf(UserData.getBRIn(participantMode, SettingsActivity.this)%1000));
-        outSec.setText(String.valueOf(UserData.getBROut(participantMode, SettingsActivity.this)/1000));
-        outMs.setText(String.valueOf(UserData.getBROut(participantMode, SettingsActivity.this)%1000));
-        sessionMin.setText(String.valueOf(UserData.getSessionLength(participantMode, SettingsActivity.this)/60000));
-        sessionSec.setText(String.valueOf((UserData.getSessionLength(participantMode, SettingsActivity.this)%60000)/1000));
+        inSec.setText(String.valueOf(UserData.getBRIn(participantMode, SettingsActivity.this)));
+        outSec.setText(String.valueOf(UserData.getBROut(participantMode, SettingsActivity.this)));
+        sessionMin.setText(String.valueOf(UserData.getSessionLength(participantMode, SettingsActivity.this)));
         inOutPaired.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
@@ -86,9 +77,7 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 saveSettings(participantMode);
-                Intent nextActivityIntent = new Intent(SettingsActivity.this, BreathingCoach.class);
-                nextActivityIntent.putExtra("fromSettings", true);
-                startActivity(nextActivityIntent);
+                startActivity(new Intent(SettingsActivity.this, PickerActivity.class));
                 finish();
             }
         });
@@ -96,20 +85,18 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void toggleExhaleSettings(boolean enable) {
         if (enable) {
-            mainLayout.addView(exhaleTitle);
             mainLayout.addView(exhaleLayout);
             inhaleTitle.setText(R.string.in_title);
         } else {
-            mainLayout.removeView(exhaleTitle);
             mainLayout.removeView(exhaleLayout);
             inhaleTitle.setText(R.string.both_title);
         }
     }
 
     private void saveSettings(boolean forParticipant) {
-        int breathIn = Integer.parseInt(inSec.getText().toString())*1000 + Integer.parseInt(inMs.getText().toString());
-        int breathOut = inOutPaired.isChecked() ? breathIn : Integer.parseInt(outSec.getText().toString())*1000 + Integer.parseInt(outMs.getText().toString());
-        int sessionLength = Integer.parseInt(sessionMin.getText().toString())*60000 + Integer.parseInt(sessionSec.getText().toString())*1000;
+        Float breathIn = Float.parseFloat(inSec.getText().toString());
+        Float breathOut = inOutPaired.isChecked() ? breathIn : Float.parseFloat(outSec.getText().toString());
+        int sessionLength = Integer.parseInt(sessionMin.getText().toString());
         UserData.setBreathingConfig(forParticipant, breathIn, breathOut, sessionLength, inOutPaired.isChecked(), forParticipant ? true : participantSettingsEnabled.isChecked(), SettingsActivity.this);
     }
 }
