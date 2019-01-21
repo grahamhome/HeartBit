@@ -18,9 +18,11 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -165,6 +167,35 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 showConnected();
             }
         }
+
+        if (UserData.getNumberOfTrials(BreathingCoach.this) < PickerActivity.trialValues.size()) {
+            findViewById(R.id.title).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    AlertDialog.Builder passwordPrompt = new AlertDialog.Builder(BreathingCoach.this);
+                    passwordPrompt.setTitle(R.string.password_prompt_title);
+                    passwordPrompt.setMessage(R.string.password_prompt_message_for_trials_skip);
+                    final EditText passwordField = new EditText(BreathingCoach.this);
+                    passwordField.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    passwordPrompt.setView(passwordField);
+                    passwordPrompt.setNegativeButton(R.string.cancel_btn_text, null);
+                    passwordPrompt.setPositiveButton(R.string.enter_btn_text, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            if (passwordField.getText().toString().equals(getString(R.string.top_secret_password))) {
+                                while (UserData.getNumberOfTrials(BreathingCoach.this) < PickerActivity.trialValues.size()+1) {
+                                    UserData.incrementTrialCount(BreathingCoach.this);
+                                }
+                                Toast.makeText(getApplicationContext(), getString(R.string.trials_skipped_message), Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(getApplicationContext(), getString(R.string.wrong_password_message), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                    passwordPrompt.show();
+                }
+            });
+        }
     }
 
     private void toggleRecording() {
@@ -210,6 +241,9 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
                 builder.show();
             } else {
                 stopRecording();
+                if (UserData.getNumberOfTrials(BreathingCoach.this) < PickerActivity.trialValues.size()+1) {
+                    UserData.incrementTrialCount(BreathingCoach.this);
+                }
             }
         }
     }
@@ -230,9 +264,6 @@ public class BreathingCoach extends AppCompatActivity implements ActivityCompat.
         sessionProgress.setProgress(0);
         breathProgressIn.setText(null);
         toggleButton.setText(getText(R.string.start_btn_text));
-        if (UserData.getNumberOfTrials(BreathingCoach.this) < PickerActivity.trialValues.size()+1) {
-            UserData.incrementTrialCount(BreathingCoach.this);
-        }
     }
 
     private void setUpMessageHandler() {

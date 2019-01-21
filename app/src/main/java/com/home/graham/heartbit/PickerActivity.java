@@ -27,11 +27,8 @@ public class PickerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Check if intro/demographics/info activities need to be viewed
-        if (!UserData.getIntroViewed(PickerActivity.this)) {
+        if (!UserData.getDemographicsEntered(PickerActivity.this)) {
             startActivity(new Intent(PickerActivity.this, IntroActivity.class));
-            finish();
-        } else if (!UserData.getDemographicsEntered(PickerActivity.this)) {
-            startActivity(new Intent(PickerActivity.this, DemographicsActivity.class));
             finish();
         } else if (!UserData.getInstructionsViewed(PickerActivity.this)) {
             startActivity(new Intent(PickerActivity.this, InfoActivity.class));

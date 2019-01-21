@@ -15,8 +15,7 @@ public class IntroActivity extends AppCompatActivity {
         findViewById(R.id.start_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                UserData.setIntroViewed(IntroActivity.this);
-                startActivity(new Intent(IntroActivity.this, PickerActivity.class));
+                startActivity(new Intent(IntroActivity.this, DemographicsActivity.class));
                 finish();
             }
         });

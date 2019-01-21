@@ -53,7 +53,8 @@
     <string name="copy_btn_text">Copy to Participant Settings</string>
     <string name="copy_success_msg">Settings copied</string>
     <string name="password_prompt_title">Researcher Mode</string>
-    <string name="password_prompt_message">If you are a researcher, please enter the Researcher Password below. Otherwise, please press "cancel" to return to the breathing exercise screen.</string>
+    <string name="password_prompt_message">If you are a researcher, please enter the Researcher Password below. Otherwise, please press \"cancel\" to return to the settings screen.</string>
+    <string name="password_prompt_message_for_trials_skip">Please enter the Researcher Password below to skip the trial sessions. Alternately, press \"cancel\" to return to the breathing exercise screen.</string>
     <string name="cancel_btn_text">Cancel</string>
     <string name="enter_btn_text">Enter</string>
     <string name="top_secret_password">hrv4science</string>
@@ -93,4 +94,5 @@
     </string-array>
     <string name="submit_btn_text">Submit</string>
     <string name="settings_btn_text">Settings</string>
+    <string name="trials_skipped_message">Trial sessions skipped. Re-open the app to access the settings.</string>
 </resources>

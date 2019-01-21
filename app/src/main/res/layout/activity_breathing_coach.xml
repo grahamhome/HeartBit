@@ -83,7 +83,8 @@
         android:layout_height="match_parent"
         android:layout_below="@id/session_timer"
         android:layout_above="@id/toggle"
-        android:layout_marginBottom="10dp">
+        android:layout_marginBottom="10dp"
+        android:fillViewport="true">
 
         <TextView
             android:id="@+id/breathing_guide"
